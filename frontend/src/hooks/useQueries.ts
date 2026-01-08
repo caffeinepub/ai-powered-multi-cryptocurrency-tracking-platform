@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { PriceCache, PriceRange } from '@/backend';
 
@@ -22,9 +22,10 @@ interface ICPPriceResponse {
 
 export type TimeframeOption = '1m' | '2m' | '3m' | '5m' | '10m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '1d' | '1M' | '3M' | '1y';
 
-// Fetch ICP current price
+// Fetch ICP current price with optimized real-time updates
 export function useICPPrice() {
   const { actor, isFetching } = useActor();
+  const queryClient = useQueryClient();
 
   return useQuery<number>({
     queryKey: ['icp-price'],
@@ -32,36 +33,62 @@ export function useICPPrice() {
       if (!actor) throw new Error('Actor not initialized');
       
       try {
+        // Fetch live price from backend (which calls CoinGecko)
         const response = await actor.getICPLivePrice();
-        const data: ICPPriceResponse = JSON.parse(response);
-        const price = data['internet-computer'].usd;
         
+        // Parse the JSON response
+        let data: ICPPriceResponse;
         try {
-          await actor.recordNewICPPrice(price);
-        } catch (error) {
-          console.warn('Failed to cache price in backend:', error);
+          data = JSON.parse(response);
+        } catch (parseError) {
+          console.error('Failed to parse price response:', parseError);
+          throw new Error('Invalid price data format');
         }
+        
+        // Extract price with validation
+        const price = data?.['internet-computer']?.usd;
+        if (typeof price !== 'number' || isNaN(price) || price <= 0) {
+          throw new Error('Invalid price value received');
+        }
+        
+        // Cache the price in backend for fallback (fire and forget)
+        actor.recordNewICPPrice(price).catch((error) => {
+          console.warn('Failed to cache price in backend:', error);
+        });
         
         return price;
       } catch (error) {
         console.warn('Live price fetch failed, attempting fallback to cache:', error);
-        const cachedData = await actor.getCachedPriceHistory();
-        if (cachedData.length > 0) {
-          const latestCached = cachedData[cachedData.length - 1];
-          return latestCached.price;
+        
+        // Fallback to cached data
+        try {
+          const cachedData = await actor.getCachedPriceHistory();
+          if (cachedData && cachedData.length > 0) {
+            const latestCached = cachedData[cachedData.length - 1];
+            if (latestCached && typeof latestCached.price === 'number') {
+              console.info('Using cached price:', latestCached.price);
+              return latestCached.price;
+            }
+          }
+        } catch (cacheError) {
+          console.error('Failed to fetch cached data:', cacheError);
         }
+        
         throw error;
       }
     },
     enabled: !!actor && !isFetching,
-    refetchInterval: 15000,
-    staleTime: 10000,
+    refetchInterval: 10000, // Refetch every 10 seconds for real-time updates
+    staleTime: 5000, // Consider data stale after 5 seconds
     retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 }
 
-// Fetch 24-hour high/low
+// Fetch 24-hour high/low with optimized updates
 export function useDailyHighLow() {
   const { actor, isFetching } = useActor();
 
@@ -70,12 +97,19 @@ export function useDailyHighLow() {
     queryFn: async () => {
       if (!actor) throw new Error('Actor not initialized');
       const range = await actor.getDailyHighLowFromCache();
+      
+      // Validate the range data
+      if (!range || typeof range.high !== 'number' || typeof range.low !== 'number') {
+        throw new Error('Invalid price range data');
+      }
+      
       return range;
     },
     enabled: !!actor && !isFetching,
-    refetchInterval: 15000,
-    staleTime: 10000,
+    refetchInterval: 10000, // Sync with price updates
+    staleTime: 5000,
     retry: 2,
+    refetchOnMount: true,
   });
 }
 

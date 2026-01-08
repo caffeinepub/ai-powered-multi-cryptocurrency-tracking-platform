@@ -1,15 +1,15 @@
 import Array "mo:core/Array";
 import Map "mo:core/Map";
 import Float "mo:core/Float";
-import Iter "mo:core/Iter";
-import Text "mo:core/Text";
 import List "mo:core/List";
-import Time "mo:core/Time";
-import OutCall "http-outcalls/outcall";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
+import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
+import Time "mo:core/Time";
+import Text "mo:core/Text";
+import OutCall "http-outcalls/outcall";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
@@ -307,8 +307,7 @@ actor {
         switch (findClosestEntry(array, entry.timestamp)) {
           case (?closest) {
             let delta = Int.abs(closest.timestamp - entry.timestamp);
-            if (delta <= 60 * 1_000_000_000) // 1 minute in nanos
-            {
+            if (delta <= 60 * 1_000_000_000) { // 1 minute in nanos
               return {
                 price = closest.price;
                 timestamp = entry.timestamp;
@@ -536,4 +535,3 @@ actor {
     userProfiles.add(caller, profile);
   };
 };
-

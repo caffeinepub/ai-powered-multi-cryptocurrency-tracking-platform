@@ -8,9 +8,11 @@ import { ICPDashboard } from '@/components/ICPDashboard';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       retry: 2,
-      staleTime: 25000,
+      staleTime: 5000,
+      gcTime: 300000, // 5 minutes
     },
   },
 });

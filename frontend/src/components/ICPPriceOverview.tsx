@@ -5,14 +5,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useICPPrice, useDailyHighLow } from '@/hooks/useQueries';
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, Clock, Activity } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function ICPPriceOverview() {
-  const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
+  const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice, isFetching } = useICPPrice();
   const { data: dailyHighLow, isLoading: isHighLowLoading } = useDailyHighLow();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+  const [priceAnimation, setPriceAnimation] = useState<'up' | 'down' | null>(null);
 
   // Update current time every second for live display
   useEffect(() => {
@@ -23,14 +24,19 @@ export function ICPPriceOverview() {
     return () => clearInterval(timer);
   }, []);
 
-  // Track price changes
+  // Track price changes and trigger animations
   useEffect(() => {
-    if (currentPrice && previousPrice === null) {
+    if (currentPrice !== undefined && previousPrice !== null && currentPrice !== previousPrice) {
+      setPriceAnimation(currentPrice > previousPrice ? 'up' : 'down');
+      const timer = setTimeout(() => setPriceAnimation(null), 1000);
+      setPreviousPrice(currentPrice);
+      return () => clearTimeout(timer);
+    } else if (currentPrice !== undefined && previousPrice === null) {
       setPreviousPrice(currentPrice);
     }
   }, [currentPrice, previousPrice]);
 
-  // Calculate 24h change (simplified - using high/low as reference)
+  // Calculate 24h change (using high/low as reference)
   const priceChange24h = dailyHighLow && currentPrice
     ? ((currentPrice - dailyHighLow.low) / dailyHighLow.low) * 100
     : 0;
@@ -42,7 +48,7 @@ export function ICPPriceOverview() {
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between">
-          <span>Data temporarily unavailable. Please try again.</span>
+          <span>Unable to fetch live price data. Please check your connection and try again.</span>
           <Button
             variant="outline"
             size="sm"
@@ -61,10 +67,18 @@ export function ICPPriceOverview() {
     <Card className="border-2 bg-gradient-to-br from-card via-card/95 to-card/90 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
       <CardContent className="p-6 md:p-8">
         <div className="space-y-6">
-          {/* Header with Time */}
+          {/* Header with Time and Live Indicator */}
           <div className="flex items-start justify-between">
             <div className="space-y-1">
-              <h3 className="text-2xl md:text-3xl font-bold">Current Price</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-2xl md:text-3xl font-bold">Current Price</h3>
+                {isFetching && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
+                    <Activity className="h-4 w-4 text-green-500" />
+                    <span className="text-green-500 font-medium">Live</span>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span className="font-mono">
@@ -92,7 +106,11 @@ export function ICPPriceOverview() {
             </div>
           ) : currentPrice ? (
             <div className="space-y-4">
-              <div className="text-6xl md:text-7xl font-bold tracking-tight transition-all duration-300 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <div 
+                className={`text-6xl md:text-7xl font-bold tracking-tight transition-all duration-500 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent ${
+                  priceAnimation === 'up' ? 'scale-105' : priceAnimation === 'down' ? 'scale-95' : ''
+                }`}
+              >
                 ${currentPrice.toFixed(3)}
               </div>
               
@@ -122,7 +140,14 @@ export function ICPPriceOverview() {
                 ) : null}
               </div>
             </div>
-          ) : null}
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Price data is currently unavailable. Retrying...
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </CardContent>
     </Card>
