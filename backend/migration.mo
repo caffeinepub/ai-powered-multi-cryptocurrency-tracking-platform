@@ -1,17 +1,12 @@
-import List "mo:core/List";
 import Map "mo:core/Map";
 import Float "mo:core/Float";
+import List "mo:core/List";
+import Int "mo:core/Int";
 
 module {
-  type OldAlerts = Map.Map<Float, Bool>;
-  type OldICPPortfolio = {
+  type ICPPortfolio = {
     coins : Float;
     avgCost : Float;
-  };
-
-  type OldActor = {
-    icpPortfolio : OldICPPortfolio;
-    alerts : OldAlerts;
   };
 
   type PriceCache = {
@@ -19,20 +14,19 @@ module {
     timestamp : Int;
   };
 
-  type NewAlerts = Map.Map<Float, Bool>;
-  type NewICPPortfolio = {
-    coins : Float;
-    avgCost : Float;
+  type OldActor = {
+    alerts : Map.Map<Float, Bool>;
+    icpPriceHistory : List.List<PriceCache>;
+    icpPortfolio : ICPPortfolio;
   };
 
   type NewActor = {
-    icpPortfolio : NewICPPortfolio;
-    alerts : NewAlerts;
+    alerts : Map.Map<Float, Bool>;
     icpPriceHistory : List.List<PriceCache>;
+    icpPortfolio : ICPPortfolio;
   };
 
   public func run(old : OldActor) : NewActor {
-    { old with icpPriceHistory = List.empty<PriceCache>() };
+    old;
   };
 };
-

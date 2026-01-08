@@ -127,6 +127,8 @@ export interface backendInterface {
     getICPLivePrice(): Promise<string>;
     getLastCachedPrice(): Promise<number | null>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
+    getPriceHistoryForHours(hours: bigint): Promise<Array<PriceCache>>;
+    getResampledPriceHistory(intervalMinutes: bigint): Promise<Array<PriceCache>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;
@@ -229,6 +231,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getPortfolioSummary();
+            return result;
+        }
+    }
+    async getPriceHistoryForHours(arg0: bigint): Promise<Array<PriceCache>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPriceHistoryForHours(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPriceHistoryForHours(arg0);
+            return result;
+        }
+    }
+    async getResampledPriceHistory(arg0: bigint): Promise<Array<PriceCache>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getResampledPriceHistory(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getResampledPriceHistory(arg0);
             return result;
         }
     }

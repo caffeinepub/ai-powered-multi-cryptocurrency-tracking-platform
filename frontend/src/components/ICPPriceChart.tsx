@@ -1,22 +1,47 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { useICPHistoricalData, usePriceAlerts } from '@/hooks/useQueries';
+import { Button } from '@/components/ui/button';
+import { useICPHistoricalData, usePriceAlerts, type TimeframeOption } from '@/hooks/useQueries';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
-import { Info } from 'lucide-react';
+import { Info, RefreshCw } from 'lucide-react';
+
+const TIMEFRAME_OPTIONS: { value: TimeframeOption; label: string }[] = [
+  { value: '1m', label: '1m' },
+  { value: '2m', label: '2m' },
+  { value: '3m', label: '3m' },
+  { value: '5m', label: '5m' },
+  { value: '10m', label: '10m' },
+  { value: '15m', label: '15m' },
+  { value: '30m', label: '30m' },
+  { value: '1h', label: '1h' },
+  { value: '2h', label: '2h' },
+  { value: '4h', label: '4h' },
+  { value: '6h', label: '6h' },
+  { value: '1d', label: '1d' },
+  { value: '1M', label: '1M' },
+  { value: '3M', label: '3M' },
+  { value: '1y', label: '1y' },
+];
 
 export function ICPPriceChart() {
-  const { data: historicalData, isLoading, error } = useICPHistoricalData();
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('1d');
+  const { data: historicalData, isLoading, error, refetch, isFetching } = useICPHistoricalData(selectedTimeframe);
   const { data: alerts } = usePriceAlerts();
+
+  const handleTimeframeChange = (timeframe: TimeframeOption) => {
+    setSelectedTimeframe(timeframe);
+  };
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>7-Day Price Chart</CardTitle>
-          <CardDescription>Historical price data with alert levels</CardDescription>
+          <CardTitle>ICP Price Chart</CardTitle>
+          <CardDescription>Historical price data with customizable timeframes</CardDescription>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[400px] w-full" />
@@ -29,14 +54,23 @@ export function ICPPriceChart() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>7-Day Price Chart</CardTitle>
-          <CardDescription>Historical price data with alert levels</CardDescription>
+          <CardTitle>ICP Price Chart</CardTitle>
+          <CardDescription>Historical price data with customizable timeframes</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert>
+          <Alert variant="destructive">
             <Info className="h-4 w-4" />
-            <AlertDescription>
-              Unable to load chart data. The system will retry automatically.
+            <AlertDescription className="flex items-center justify-between">
+              <span>Unable to load chart data. Please try again.</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="ml-4"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -44,24 +78,70 @@ export function ICPPriceChart() {
     );
   }
 
-  // Check if data is from cache/synthetic
+  // Check if data is recent (less than 1 hour old)
   const isRecentData = historicalData.length > 0 && 
-    (Date.now() - historicalData[historicalData.length - 1].timestamp) < 3600000; // Less than 1 hour old
+    (Date.now() - historicalData[historicalData.length - 1].timestamp) < 3600000;
+
+  // Format timestamp based on timeframe
+  const formatTimestamp = (timestamp: number) => {
+    if (['1m', '2m', '3m', '5m', '10m', '15m', '30m'].includes(selectedTimeframe)) {
+      return format(new Date(timestamp), 'HH:mm');
+    } else if (['1h', '2h', '4h', '6h'].includes(selectedTimeframe)) {
+      return format(new Date(timestamp), 'MMM dd HH:mm');
+    } else if (selectedTimeframe === '1d') {
+      return format(new Date(timestamp), 'MMM dd');
+    } else {
+      return format(new Date(timestamp), 'MMM yyyy');
+    }
+  };
+
+  const formatTooltipTimestamp = (timestamp: number) => {
+    if (['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '6h'].includes(selectedTimeframe)) {
+      return format(new Date(timestamp), 'MMM dd, yyyy HH:mm');
+    } else {
+      return format(new Date(timestamp), 'MMM dd, yyyy');
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle>7-Day Price Chart</CardTitle>
-            <CardDescription>Historical price data with alert levels</CardDescription>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle>ICP Price Chart</CardTitle>
+              <CardDescription>Historical price data with customizable timeframes</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {isFetching && (
+                <Badge variant="outline" className="text-blue-500 border-blue-500">
+                  <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+                  Updating
+                </Badge>
+              )}
+              {!isRecentData && (
+                <Badge variant="outline" className="text-yellow-500 border-yellow-500">
+                  <Info className="mr-1 h-3 w-3" />
+                  Cached Data
+                </Badge>
+              )}
+            </div>
           </div>
-          {!isRecentData && (
-            <Badge variant="outline" className="text-yellow-500 border-yellow-500">
-              <Info className="mr-1 h-3 w-3" />
-              Cached Data
-            </Badge>
-          )}
+          
+          {/* Timeframe Selector */}
+          <div className="flex flex-wrap gap-1">
+            {TIMEFRAME_OPTIONS.map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedTimeframe === option.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleTimeframeChange(option.value)}
+                className="h-8 px-3 text-xs"
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -70,8 +150,9 @@ export function ICPPriceChart() {
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis
               dataKey="timestamp"
-              tickFormatter={(value) => format(new Date(value), 'MMM dd')}
+              tickFormatter={formatTimestamp}
               className="text-xs"
+              minTickGap={50}
             />
             <YAxis
               domain={['auto', 'auto']}
@@ -84,19 +165,19 @@ export function ICPPriceChart() {
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
               }}
-              labelFormatter={(value) => format(new Date(value), 'MMM dd, yyyy HH:mm')}
+              labelFormatter={(value) => formatTooltipTimestamp(value as number)}
               formatter={(value: number) => [`$${value.toFixed(3)}`, 'Price']}
             />
             {alerts?.map((alert) => (
               <ReferenceLine
                 key={alert.price}
                 y={alert.price}
-                stroke={alert.isTriggered ? 'hsl(var(--green-500))' : 'hsl(var(--destructive))'}
+                stroke={alert.isTriggered ? 'hsl(142 76% 36%)' : 'hsl(var(--destructive))'}
                 strokeDasharray="3 3"
                 label={{
                   value: `$${alert.price.toFixed(2)}`,
                   position: 'right',
-                  fill: alert.isTriggered ? 'hsl(var(--green-500))' : 'hsl(var(--destructive))',
+                  fill: alert.isTriggered ? 'hsl(142 76% 36%)' : 'hsl(var(--destructive))',
                   fontSize: 11,
                 }}
               />

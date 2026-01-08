@@ -6,17 +6,24 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 ## Core Features
 
 ### ICP Live Price Tracker
-- Display a dynamic chart showing real-time ICP price changes with continuous updates
-- Implement robust chart data system with fallback mechanisms:
-  - Cache recent price history data in backend
-  - When API endpoints fail, display cached data or recent averages
-  - Ensure chart always shows meaningful price history instead of "Chart data temporarily unavailable"
-- Implement enhanced price alert system:
+- Display a robust dynamic chart showing real-time ICP price changes with continuous updates and reliable data display
+- Implement comprehensive chart timeframe selection with the following options:
+  - Short-term intervals: 1-minute, 2-minute, 3-minute, 5-minute, 10-minute, 15-minute, 30-minute
+  - Medium-term intervals: 1-hour, 2-hour, 4-hour, 6-hour
+  - Long-term intervals: 1-day, 1-month, 1-quarter, 1-year
+- Implement enhanced chart data system with precise time-based intervals and fallback mechanisms:
+  - Cache comprehensive price history data in backend with proper time-based indexing
+  - Automatically refresh and resample data based on selected timeframe
+  - Seamless transitions between different timeframes
+  - When API endpoints fail, display cached data maintaining chart consistency
+  - Ensure chart always shows meaningful price history with proper time intervals
+- Implement comprehensive price alert system with full manual management:
   - View all currently active alerts with their status (triggered, pending, inactive)
   - Add new alerts by entering custom target prices
-  - Remove existing alerts
+  - Remove existing alerts with immediate UI updates
   - Visual indicators for different alert states
-  - Automatic UI updates when alerts are added or removed
+  - Synchronize alert actions with backend through React Query mutation hooks
+  - Instant UI updates when alerts are added, removed, or status changes
 - Show investment portfolio summary:
   - Total coins: 1864 ICP
   - Average cost: $6.152
@@ -37,15 +44,22 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 ### Frontend
 - Clean, modern React user interface
 - Responsive design that works on desktop and mobile devices
-- Interactive price charts for ICP visualization with fallback data display
+- Interactive price charts for ICP visualization with comprehensive timeframe selection
+- Automatic chart refresh and data resampling based on selected timeframe
+- Seamless transitions between different chart timeframes
+- Enhanced fallback data display with proper time-based intervals
 - Sortable table for top 50 cryptocurrencies
 - Real-time data updates without page refresh
-- Enhanced price alert management interface:
-  - Form to add new price alerts
-  - List view of all active alerts with status indicators
-  - Delete functionality for existing alerts
+- Comprehensive price alert management interface:
+  - Form to add new price alerts with validation
+  - Complete list view of all active alerts with status indicators
+  - Delete functionality for existing alerts with confirmation
   - Visual states for triggered, pending, and inactive alerts
-- React Query integration for automatic UI revalidation when alerts change
+  - Manual alert management with full CRUD operations
+- React Query integration with mutation hooks for alert management:
+  - Instant UI updates when alerts are modified
+  - Automatic revalidation of alert data
+  - Synchronization with backend `toggleAlertStatus` and `getAlerts` functions
 - Enhanced error handling with user-friendly messages:
   - Display retry button when network errors occur
   - Show "Data temporarily unavailable" message instead of generic connection errors
@@ -54,39 +68,45 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 
 ### Backend
 - Store user's ICP investment data (1864 coins, $6.152 average cost)
-- Store and manage price alerts:
+- Store and manage price alerts with enhanced functionality:
   - Create new price alerts with custom target prices
   - Delete existing price alerts
-  - Track alert status (triggered, pending, inactive)
-  - Provide endpoints for alert CRUD operations
-- Implement price data caching and fallback system:
-  - Cache recent ICP price history data
-  - Provide fallback data when external APIs fail
-  - Maintain recent price averages for chart display
+  - Toggle alert status (triggered, pending, inactive)
+  - Provide comprehensive endpoints for alert CRUD operations
+  - Implement `toggleAlertStatus` and `getAlerts` functions for frontend integration
+- Implement robust price data caching and fallback system:
+  - Cache comprehensive ICP price history data with precise time-based indexing
+  - Maintain `icpPriceHistory` with proper time intervals for all supported timeframes
+  - Provide reliable fallback data when external APIs fail
+  - Ensure chart consistency by maintaining recent price entries
+  - Support data resampling for different timeframe requirements
 - Fetch live ICP price data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd`)
 - Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
 - Provide endpoints for:
-  - Current ICP price and historical data with fallback support
+  - Current ICP price and comprehensive historical data with time-based intervals
+  - Chart data for all supported timeframes with fallback support
   - Top 50 cryptocurrencies market data
   - Investment portfolio calculations
-  - Complete price alert management (create, read, update, delete)
+  - Complete price alert management with status synchronization
 
 ### Data Management
 - Backend stores investment portfolio information
-- Backend stores price alert configurations with status tracking
-- Backend caches recent price data for fallback scenarios
+- Backend stores price alert configurations with comprehensive status tracking
+- Backend caches extensive price data with time-based indexing for reliable chart display
 - Backend fetches real-time price data from CoinGecko API via HTTP outcalls
-- Historical price data for chart visualization with cached fallbacks
+- Comprehensive historical price data for all chart timeframes with cached fallbacks
 - Clean data transformation from external API responses to frontend-consumable format
+- Proper maintenance of `icpPriceHistory` for chart consistency
 
 ## User Interface
 - Two main sections: ICP tracker and top 50 dashboard
 - Navigation between different views
-- Responsive charts and tables with reliable data display
-- Enhanced price alert management section with intuitive controls
+- Responsive charts with comprehensive timeframe selection and reliable data display
+- Enhanced price alert management section with full manual control and intuitive interface
 - Clean typography and modern styling
 - Color coding for price changes (green for gains, red for losses)
 - Visual indicators for alert states (different colors/icons for triggered, pending, inactive)
 - Improved error states with actionable user feedback
+- Seamless chart transitions between timeframes
 - Application content displayed in English

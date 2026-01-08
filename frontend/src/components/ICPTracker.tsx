@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 export function ICPTracker() {
   const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
-  const { data: historicalData } = useICPHistoricalData();
+  const { data: historicalData } = useICPHistoricalData('1d');
   const { data: portfolio, isLoading: isPortfolioLoading } = usePortfolioSummary();
   const { data: alerts } = usePriceAlerts();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);

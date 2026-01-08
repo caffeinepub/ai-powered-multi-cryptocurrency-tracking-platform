@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAddAlert, useRemoveAlert, useToggleAlert } from '@/hooks/useQueries';
 import { Bell, BellOff, Check, X, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
@@ -60,6 +61,9 @@ export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) 
   const handleToggle = async (price: number) => {
     try {
       await toggleAlert.mutateAsync(price);
+      toast.success('Alert status updated', {
+        description: 'Alert status has been toggled',
+      });
     } catch (error) {
       toast.error('Failed to toggle alert', {
         description: 'Please try again',
@@ -119,8 +123,13 @@ export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) 
             onClick={handleAddAlert}
             disabled={addAlert.isPending || !newAlertPrice}
             size="icon"
+            title="Add alert"
           >
-            <Plus className="h-4 w-4" />
+            {addAlert.isPending ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
@@ -133,92 +142,97 @@ export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) 
             </AlertDescription>
           </Alert>
         ) : (
-          <div className="space-y-2">
-            {alerts.map((alert) => {
-              const isAbove = currentPrice ? currentPrice > alert.price : false;
-              const isNear = currentPrice ? Math.abs(currentPrice - alert.price) / alert.price < 0.05 : false;
-              const percentDiff = currentPrice 
-                ? ((alert.price - currentPrice) / currentPrice * 100).toFixed(1)
-                : '0';
+          <ScrollArea className="h-[300px] pr-4">
+            <div className="space-y-2">
+              {alerts.map((alert) => {
+                const isAbove = currentPrice ? currentPrice > alert.price : false;
+                const isNear = currentPrice ? Math.abs(currentPrice - alert.price) / alert.price < 0.05 : false;
+                const percentDiff = currentPrice 
+                  ? ((alert.price - currentPrice) / currentPrice * 100).toFixed(1)
+                  : '0';
 
-              return (
-                <div
-                  key={alert.price}
-                  className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
-                    alert.isTriggered 
-                      ? 'border-green-500/50 bg-green-500/10' 
-                      : isNear 
-                      ? 'border-yellow-500/50 bg-yellow-500/5' 
-                      : 'bg-muted/30'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className={`flex h-9 w-9 items-center justify-center rounded-full ${
+                return (
+                  <div
+                    key={alert.price}
+                    className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
                       alert.isTriggered 
-                        ? 'bg-green-500/20' 
+                        ? 'border-green-500/50 bg-green-500/10' 
                         : isNear 
-                        ? 'bg-yellow-500/20' 
-                        : 'bg-muted'
-                    }`}>
-                      {alert.isTriggered ? (
-                        <Check className="h-4 w-4 text-green-500" />
-                      ) : isNear ? (
-                        <AlertCircle className="h-4 w-4 text-yellow-500" />
-                      ) : (
-                        <Bell className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">${alert.price.toFixed(3)}</p>
-                        {alert.isTriggered && (
-                          <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
-                            Triggered
-                          </Badge>
-                        )}
-                        {!alert.isTriggered && isNear && (
-                          <Badge variant="outline" className="text-yellow-500 border-yellow-500 text-xs">
-                            Near
-                          </Badge>
+                        ? 'border-yellow-500/50 bg-yellow-500/5' 
+                        : 'bg-muted/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className={`flex h-9 w-9 items-center justify-center rounded-full ${
+                        alert.isTriggered 
+                          ? 'bg-green-500/20' 
+                          : isNear 
+                          ? 'bg-yellow-500/20' 
+                          : 'bg-muted'
+                      }`}>
+                        {alert.isTriggered ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : isNear ? (
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        ) : (
+                          <Bell className="h-4 w-4 text-muted-foreground" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {isAbove ? `${percentDiff}% below current` : `${Math.abs(parseFloat(percentDiff))}% above current`}
-                      </p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">${alert.price.toFixed(3)}</p>
+                          {alert.isTriggered && (
+                            <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
+                              Triggered
+                            </Badge>
+                          )}
+                          {!alert.isTriggered && isNear && (
+                            <Badge variant="outline" className="text-yellow-500 border-yellow-500 text-xs">
+                              Near
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {isAbove ? `${percentDiff}% below current` : `${Math.abs(parseFloat(percentDiff))}% above current`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleToggle(alert.price)}
+                        disabled={toggleAlert.isPending}
+                        title={alert.isTriggered ? 'Mark as pending' : 'Mark as triggered'}
+                      >
+                        {alert.isTriggered ? (
+                          <BellOff className="h-4 w-4" />
+                        ) : (
+                          <Bell className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleRemoveAlert(alert.price)}
+                        disabled={removeAlert.isPending}
+                        title="Remove alert"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleToggle(alert.price)}
-                      disabled={toggleAlert.isPending}
-                      title={alert.isTriggered ? 'Mark as pending' : 'Mark as triggered'}
-                    >
-                      {alert.isTriggered ? (
-                        <BellOff className="h-4 w-4" />
-                      ) : (
-                        <Bell className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => handleRemoveAlert(alert.price)}
-                      disabled={removeAlert.isPending}
-                      title="Remove alert"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>
   );
 }
+
+// Import RefreshCw for loading state
+import { RefreshCw } from 'lucide-react';

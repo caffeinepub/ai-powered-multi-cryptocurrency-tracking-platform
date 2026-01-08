@@ -45,6 +45,8 @@ export interface backendInterface {
     getICPLivePrice(): Promise<string>;
     getLastCachedPrice(): Promise<number | null>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
+    getPriceHistoryForHours(hours: bigint): Promise<Array<PriceCache>>;
+    getResampledPriceHistory(intervalMinutes: bigint): Promise<Array<PriceCache>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;

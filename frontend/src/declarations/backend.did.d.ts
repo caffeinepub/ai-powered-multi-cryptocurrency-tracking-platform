@@ -36,6 +36,8 @@ export interface _SERVICE {
   'getICPLivePrice' : ActorMethod<[], string>,
   'getLastCachedPrice' : ActorMethod<[], [] | [number]>,
   'getPortfolioSummary' : ActorMethod<[], ICPPortfolio>,
+  'getPriceHistoryForHours' : ActorMethod<[bigint], Array<PriceCache>>,
+  'getResampledPriceHistory' : ActorMethod<[bigint], Array<PriceCache>>,
   'getTopCryptos' : ActorMethod<[], string>,
   'recordNewICPPrice' : ActorMethod<[number], undefined>,
   'toggleAlertStatus' : ActorMethod<[number], undefined>,
