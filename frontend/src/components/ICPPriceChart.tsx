@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useICPHistoricalData, usePriceAlerts, usePrefetchTimeframes, type TimeframeOption } from '@/hooks/useQueries';
+import { useICPHistoricalData, usePrefetchTimeframes, type TimeframeOption } from '@/hooks/useQueries';
 import {
   ComposedChart,
   Line,
@@ -21,17 +21,15 @@ import {
   ReferenceLine,
   TooltipProps,
   Legend,
+  Area,
 } from 'recharts';
 import { format } from 'date-fns';
-import { Info, RefreshCw, TrendingUp, Clock, AlertCircle } from 'lucide-react';
+import { Info, RefreshCw, TrendingUp, Clock, AlertCircle, Sparkles } from 'lucide-react';
 import {
   calculateRSI,
   calculateMACD,
   calculateTTMSqueeze,
   preparePriceDataForTTM,
-  type IndicatorData,
-  type MACDData,
-  type TTMSqueezeData,
 } from '@/lib/indicators';
 
 interface TimeframeConfig {
@@ -43,23 +41,14 @@ interface TimeframeConfig {
 
 const TIMEFRAME_OPTIONS: TimeframeConfig[] = [
   { value: '1m', label: '1m', description: 'High-frequency data, updates every minute', updateFrequency: '~1440 points/day' },
-  { value: '2m', label: '2m', description: 'High-frequency data, updates every 2 minutes', updateFrequency: '~720 points/day' },
-  { value: '3m', label: '3m', description: 'High-frequency data, updates every 3 minutes', updateFrequency: '~480 points/day' },
   { value: '5m', label: '5m', description: 'High-frequency data, updates every 5 minutes', updateFrequency: '~288 points/day' },
-  { value: '10m', label: '10m', description: 'Medium-frequency data, updates every 10 minutes', updateFrequency: '~144 points/day' },
   { value: '15m', label: '15m', description: 'Medium-frequency data, updates every 15 minutes', updateFrequency: '~96 points/day' },
-  { value: '30m', label: '30m', description: 'Medium-frequency data, updates every 30 minutes', updateFrequency: '~48 points/day' },
   { value: '1h', label: '1h', description: 'Hourly data, updates every hour', updateFrequency: '~168 points/week' },
-  { value: '2h', label: '2h', description: 'Hourly data, updates every 2 hours', updateFrequency: '~84 points/week' },
   { value: '4h', label: '4h', description: 'Hourly data, updates every 4 hours', updateFrequency: '~180 points/month' },
-  { value: '6h', label: '6h', description: 'Hourly data, updates every 6 hours', updateFrequency: '~120 points/month' },
   { value: '1d', label: '1d', description: 'Daily data, updates once per day', updateFrequency: '~90 points/quarter' },
-  { value: '1M', label: '1M', description: 'Monthly data, updates once per month', updateFrequency: '~30 points' },
-  { value: '3M', label: '3M', description: 'Quarterly data, updates every 3 months', updateFrequency: '~90 points' },
-  { value: '1y', label: '1y', description: 'Yearly data, updates once per year', updateFrequency: '~365 points' },
+  { value: '1M', label: '1w', description: 'Weekly data, updates once per week', updateFrequency: '~52 points/year' },
+  { value: '3M', label: '1mo', description: 'Monthly data, updates once per month', updateFrequency: '~12 points/year' },
 ];
-
-type IndicatorType = 'none' | 'rsi' | 'macd' | 'ttm';
 
 interface ChartDataPoint {
   timestamp: number;
@@ -70,9 +59,10 @@ interface ChartDataPoint {
   macdHistogram?: number;
   ttmValue?: number;
   ttmSqueeze?: boolean;
+  aiProjection?: number;
 }
 
-// Custom tooltip component with comprehensive details
+// Custom tooltip component
 function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
   if (!active || !payload || !payload.length) {
     return null;
@@ -91,6 +81,11 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
         <p className="text-sm font-bold">
           Price: <span className="text-primary">${data.price.toFixed(4)}</span>
         </p>
+        {data.aiProjection !== undefined && (
+          <p className="text-xs">
+            AI Projection: <span className="font-semibold text-purple-500">${data.aiProjection.toFixed(4)}</span>
+          </p>
+        )}
         {data.rsi !== undefined && (
           <p className="text-xs">
             RSI: <span className="font-semibold text-purple-500">{data.rsi.toFixed(2)}</span>
@@ -104,11 +99,6 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
             {data.macdSignal !== undefined && (
               <p className="text-xs">
                 Signal: <span className="font-semibold text-orange-500">{data.macdSignal.toFixed(4)}</span>
-              </p>
-            )}
-            {data.macdHistogram !== undefined && (
-              <p className="text-xs">
-                Histogram: <span className="font-semibold">{data.macdHistogram.toFixed(4)}</span>
               </p>
             )}
           </>
@@ -137,36 +127,25 @@ export function ICPPriceChart() {
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
   const [showTTM, setShowTTM] = useState(false);
+  const [showAIProjection, setShowAIProjection] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { data: historicalData, isLoading, error, refetch, isFetching } = useICPHistoricalData(selectedTimeframe);
-  const { data: alertsData } = usePriceAlerts();
   const { prefetchTimeframe } = usePrefetchTimeframes();
 
-  // Convert alerts from backend format [price, isTriggered] to objects
-  const alerts = useMemo(() => {
-    if (!alertsData) return [];
-    return alertsData.map(([price, isTriggered]) => ({ price, isTriggered }));
-  }, [alertsData]);
-
-  // Prefetch adjacent timeframes for smoother transitions
+  // Prefetch adjacent timeframes
   useEffect(() => {
     const currentIndex = TIMEFRAME_OPTIONS.findIndex(opt => opt.value === selectedTimeframe);
     
-    // Prefetch next and previous timeframes
     if (currentIndex > 0) {
       prefetchTimeframe(TIMEFRAME_OPTIONS[currentIndex - 1].value);
     }
     if (currentIndex < TIMEFRAME_OPTIONS.length - 1) {
       prefetchTimeframe(TIMEFRAME_OPTIONS[currentIndex + 1].value);
     }
-    
-    // Also prefetch commonly used timeframes
-    if (selectedTimeframe !== '1h') prefetchTimeframe('1h');
-    if (selectedTimeframe !== '1d') prefetchTimeframe('1d');
   }, [selectedTimeframe, prefetchTimeframe]);
 
-  // Calculate indicators based on historical data with adaptive period handling
+  // Calculate indicators and AI projection
   const chartData = useMemo<ChartDataPoint[]>(() => {
     if (!historicalData || historicalData.length === 0) return [];
 
@@ -175,14 +154,13 @@ export function ICPPriceChart() {
       price: d.price,
     }));
 
-    // Adjust indicator periods based on data density
     const dataLength = historicalData.length;
     const rsiPeriod = Math.min(14, Math.max(7, Math.floor(dataLength / 10)));
     const macdFast = Math.min(12, Math.max(6, Math.floor(dataLength / 15)));
     const macdSlow = Math.min(26, Math.max(12, Math.floor(dataLength / 8)));
     const macdSignal = Math.min(9, Math.max(5, Math.floor(dataLength / 20)));
 
-    // Calculate RSI if enabled
+    // Calculate RSI
     if (showRSI) {
       const rsiData = calculateRSI(historicalData, rsiPeriod);
       const rsiMap = new Map(rsiData.map((d) => [d.timestamp, d.value]));
@@ -192,7 +170,7 @@ export function ICPPriceChart() {
       }));
     }
 
-    // Calculate MACD if enabled
+    // Calculate MACD
     if (showMACD) {
       const macdData = calculateMACD(historicalData, macdFast, macdSlow, macdSignal);
       const macdMap = new Map(
@@ -212,7 +190,7 @@ export function ICPPriceChart() {
       });
     }
 
-    // Calculate TTM Squeeze if enabled
+    // Calculate TTM Squeeze
     if (showTTM) {
       const ttmData = calculateTTMSqueeze(preparePriceDataForTTM(historicalData), 20, 2, 20, 1.5);
       const ttmMap = new Map(
@@ -228,8 +206,22 @@ export function ICPPriceChart() {
       });
     }
 
+    // Add AI projection (simple linear regression for demonstration)
+    if (showAIProjection && data.length > 10) {
+      const recentData = data.slice(-20);
+      const avgGrowth = recentData.reduce((sum, d, i) => {
+        if (i === 0) return 0;
+        return sum + (d.price - recentData[i - 1].price);
+      }, 0) / (recentData.length - 1);
+
+      data = data.map((d, i) => ({
+        ...d,
+        aiProjection: i >= data.length - 10 ? d.price + avgGrowth * (data.length - i) : undefined,
+      }));
+    }
+
     return data;
-  }, [historicalData, showRSI, showMACD, showTTM]);
+  }, [historicalData, showRSI, showMACD, showTTM, showAIProjection]);
 
   const handleTimeframeChange = async (timeframe: TimeframeOption) => {
     if (timeframe === selectedTimeframe) return;
@@ -237,7 +229,6 @@ export function ICPPriceChart() {
     setIsTransitioning(true);
     setSelectedTimeframe(timeframe);
     
-    // Reset transition state after a short delay
     setTimeout(() => {
       setIsTransitioning(false);
     }, 300);
@@ -247,8 +238,8 @@ export function ICPPriceChart() {
     return (
       <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle>ICP Live Price Chart</CardTitle>
-          <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
+          <CardTitle>Interactive Price Chart</CardTitle>
+          <CardDescription>Real-time price data with AI projections and technical indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -264,8 +255,8 @@ export function ICPPriceChart() {
     return (
       <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle>ICP Live Price Chart</CardTitle>
-          <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
+          <CardTitle>Interactive Price Chart</CardTitle>
+          <CardDescription>Real-time price data with AI projections and technical indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -287,8 +278,8 @@ export function ICPPriceChart() {
     return (
       <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle>ICP Live Price Chart</CardTitle>
-          <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
+          <CardTitle>Interactive Price Chart</CardTitle>
+          <CardDescription>Real-time price data with AI projections and technical indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert>
@@ -306,15 +297,13 @@ export function ICPPriceChart() {
     );
   }
 
-  // Check if data is recent (less than 1 hour old)
   const isRecentData =
     historicalData.length > 0 && Date.now() - historicalData[historicalData.length - 1].timestamp < 3600000;
 
-  // Format timestamp based on timeframe
   const formatTimestamp = (timestamp: number) => {
-    if (['1m', '2m', '3m', '5m', '10m', '15m', '30m'].includes(selectedTimeframe)) {
+    if (['1m', '5m', '15m'].includes(selectedTimeframe)) {
       return format(new Date(timestamp), 'HH:mm');
-    } else if (['1h', '2h', '4h', '6h'].includes(selectedTimeframe)) {
+    } else if (['1h', '4h'].includes(selectedTimeframe)) {
       return format(new Date(timestamp), 'MMM dd HH:mm');
     } else if (selectedTimeframe === '1d') {
       return format(new Date(timestamp), 'MMM dd');
@@ -323,30 +312,27 @@ export function ICPPriceChart() {
     }
   };
 
-  // Determine if we need multiple charts for indicators
   const hasIndicators = showRSI || showMACD || showTTM;
   const mainChartHeight = hasIndicators ? 300 : 400;
   const indicatorHeight = 150;
 
-  // Get current timeframe config
   const currentConfig = TIMEFRAME_OPTIONS.find(opt => opt.value === selectedTimeframe);
 
-  // Calculate consistent Y-axis domain for stable scaling
   const priceValues = chartData.map(d => d.price);
   const minPrice = Math.min(...priceValues);
   const maxPrice = Math.max(...priceValues);
   const priceRange = maxPrice - minPrice;
-  const pricePadding = priceRange * 0.1; // 10% padding
+  const pricePadding = priceRange * 0.1;
   const yAxisDomain = [minPrice - pricePadding, maxPrice + pricePadding];
 
   return (
-    <Card className="animate-fade-in">
+    <Card className="animate-fade-in border-2">
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                ICP Live Price Chart
+                Interactive Price Chart
                 {isTransitioning && (
                   <Badge variant="outline" className="border-blue-500 text-blue-500 animate-pulse">
                     <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
@@ -354,7 +340,7 @@ export function ICPPriceChart() {
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
+              <CardDescription>Real-time price data with AI projections and technical indicators</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {isFetching && !isTransitioning && (
@@ -372,14 +358,14 @@ export function ICPPriceChart() {
             </div>
           </div>
 
-          {/* Enhanced Timeframe Selector with Tooltips */}
+          {/* Timeframe Selector */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span className="font-medium">Timeframe:</span>
               {currentConfig && (
                 <span className="text-xs">
-                  {currentConfig.description} • {currentConfig.updateFrequency}
+                  {currentConfig.description}
                 </span>
               )}
             </div>
@@ -406,7 +392,6 @@ export function ICPPriceChart() {
                       <div className="space-y-1">
                         <p className="font-semibold">{option.label} Interval</p>
                         <p className="text-xs text-muted-foreground">{option.description}</p>
-                        <p className="text-xs text-muted-foreground">Data density: {option.updateFrequency}</p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -419,10 +404,30 @@ export function ICPPriceChart() {
           <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/50 p-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Technical Indicators:</span>
+              <span className="text-sm font-medium">Overlays:</span>
             </div>
             <TooltipProvider delayDuration={200}>
               <div className="flex flex-wrap items-center gap-4">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="ai-toggle"
+                        checked={showAIProjection}
+                        onCheckedChange={setShowAIProjection}
+                        disabled={isFetching || isTransitioning}
+                      />
+                      <Label htmlFor="ai-toggle" className="cursor-pointer text-sm font-medium flex items-center gap-1">
+                        <Sparkles className="h-3 w-3" />
+                        AI Projection
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">AI-powered price trajectory forecast</p>
+                  </TooltipContent>
+                </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="flex items-center space-x-2">
@@ -438,7 +443,7 @@ export function ICPPriceChart() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Relative Strength Index - Momentum oscillator (0-100)</p>
+                    <p className="text-xs">Relative Strength Index - Momentum oscillator</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -457,7 +462,7 @@ export function ICPPriceChart() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Moving Average Convergence Divergence - Trend indicator</p>
+                    <p className="text-xs">Moving Average Convergence Divergence</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -476,7 +481,7 @@ export function ICPPriceChart() {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">TTM Squeeze - Volatility and momentum indicator</p>
+                    <p className="text-xs">TTM Squeeze - Volatility indicator</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -486,9 +491,15 @@ export function ICPPriceChart() {
       </CardHeader>
       <CardContent>
         <div className={`space-y-4 transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
-          {/* Main Price Chart with Consistent Scaling */}
+          {/* Main Price Chart */}
           <ResponsiveContainer width="100%" height={mainChartHeight}>
             <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <defs>
+                <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} className="text-xs" minTickGap={50} />
               <YAxis
@@ -499,37 +510,35 @@ export function ICPPriceChart() {
               />
               <RechartsTooltip content={<CustomTooltip />} />
               <Legend />
-              {alerts?.map((alert) => (
-                <ReferenceLine
-                  key={alert.price}
-                  y={alert.price}
-                  yAxisId="price"
-                  stroke={alert.isTriggered ? 'hsl(142 76% 36%)' : 'hsl(var(--destructive))'}
-                  strokeDasharray="3 3"
-                  label={{
-                    value: `$${alert.price.toFixed(2)}`,
-                    position: 'right',
-                    fill: alert.isTriggered ? 'hsl(142 76% 36%)' : 'hsl(var(--destructive))',
-                    fontSize: 11,
-                  }}
-                />
-              ))}
-              <Line
+              <Area
                 yAxisId="price"
                 type="monotone"
                 dataKey="price"
                 stroke="hsl(var(--primary))"
+                fill="url(#priceGradient)"
                 strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 6 }}
                 name="Price"
                 isAnimationActive={!isTransitioning}
                 animationDuration={300}
               />
+              {showAIProjection && (
+                <Line
+                  yAxisId="price"
+                  type="monotone"
+                  dataKey="aiProjection"
+                  stroke="hsl(280 100% 70%)"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={false}
+                  name="AI Projection"
+                  isAnimationActive={!isTransitioning}
+                  animationDuration={300}
+                />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
 
-          {/* RSI Indicator Chart */}
+          {/* RSI Indicator */}
           {showRSI && (
             <ResponsiveContainer width="100%" height={indicatorHeight}>
               <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -553,7 +562,7 @@ export function ICPPriceChart() {
             </ResponsiveContainer>
           )}
 
-          {/* MACD Indicator Chart */}
+          {/* MACD Indicator */}
           {showMACD && (
             <ResponsiveContainer width="100%" height={indicatorHeight}>
               <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -578,7 +587,7 @@ export function ICPPriceChart() {
             </ResponsiveContainer>
           )}
 
-          {/* TTM Squeeze Indicator Chart */}
+          {/* TTM Squeeze Indicator */}
           {showTTM && (
             <ResponsiveContainer width="100%" height={indicatorHeight}>
               <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>

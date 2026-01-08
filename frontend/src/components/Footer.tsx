@@ -21,7 +21,7 @@ export function Footer() {
           <div className="flex flex-col sm:flex-row items-center gap-2 text-xs text-muted-foreground">
             <span>Data provided by CoinGecko API</span>
             <span className="hidden sm:inline">•</span>
-            <span>Prices update every 30 seconds</span>
+            <span>Real-time updates every 15 seconds</span>
           </div>
         </div>
       </div>
