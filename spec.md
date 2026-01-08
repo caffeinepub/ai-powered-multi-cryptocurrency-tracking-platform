@@ -5,13 +5,19 @@ A comprehensive cryptocurrency investment and growth application that combines p
 
 ## Core Features
 
-### Enhanced Portfolio Growth Simulator
-- Simulate portfolio growth from $1,000 starting investment to $10,000 goal with simplified, user-friendly input controls
+### Enhanced Portfolio Growth Simulator with Real-Time Integration
+- Rebuild the Portfolio Growth Simulator with intuitive dropdown menus for each configuration section:
+  - Investment selection dropdown with searchable cryptocurrency options
+  - Growth projection dropdown with predefined scenarios (conservative, moderate, aggressive)
+  - Timeframe dropdown with options (1 month, 3 months, 6 months, 1 year, 2 years, 5 years)
+  - Strategy type dropdown (DCA, lump sum, hybrid)
+  - Risk level dropdown (low, medium, high)
+- Link simulator charts in real-time to the user's active cryptocurrency investments
+- Dynamically recalculate projections and ROI as live data updates
 - Use real historical data from top cryptocurrencies for accurate simulations
 - Apply different market conditions (bull market, bear market, sideways market) to projections
 - Show projected timeline to reach investment goals under various scenarios
 - Display enhanced growth charts with optimized calculation logic and improved visual layout and responsiveness
-- Allow users to adjust simulation parameters with streamlined controls (starting amount, target amount, time horizon)
 - Compare performance across different cryptocurrency portfolios
 - Provide intelligent adjustment suggestions for portfolio configuration using live market trends from the top 100 cryptocurrencies for realistic growth projections
 - Enhanced interactive interface with smoother animations, modern aesthetics, and simplified navigation for user accessibility
@@ -26,8 +32,8 @@ A comprehensive cryptocurrency investment and growth application that combines p
 - Allow users to customize recommendation sensitivity and criteria
 - Enhanced AI-powered sentiment, volatility, and trend indicators with improved visual clarity
 
-### Enhanced ICP Live Price Tracker with Real-Time Synchronization
-- Display a robust dynamic chart showing real-time ICP price changes with enhanced reliability and continuous updates
+### Enhanced ICP Live Price Tracker with Fixed Real-Time Updates
+- Display a robust dynamic chart showing continuous real-time ICP price changes with fixed scaling and visual alignment across timeframes
 - Fixed real-time date and timestamp display that updates dynamically with each price update
 - Enhanced backend data refresh cycle with improved synchronization between price, date, and daily high/low stats
 - Improved frontend state management to ensure real-time synchronization of all price-related data
@@ -105,17 +111,19 @@ A comprehensive cryptocurrency investment and growth application that combines p
 ## Technical Requirements
 
 ### Frontend
-- Modern, redesigned React user interface with smoother, more intuitive user experience
+- Modern, redesigned React user interface with enhanced UI/UX design for smoother animations, cohesive layout transitions, and intuitive interactivity
 - Enhanced responsive design optimized for desktop and mobile with improved visual transitions and animations
 - GPU-accelerated animations and UI updates for optimal performance
 - Responsive, easy-to-use dropdown menu with real-time search functionality for navigation and asset selection
-- Interactive price charts for ICP visualization with enhanced timeframe selection controls and optimized rendering
+- Interactive price charts for ICP visualization with fixed continuous real-time updates and consistent scaling across timeframes
 - Fixed real-time date and timestamp display with dynamic updates synchronized to price changes
 - Improved frontend state management for real-time synchronization of price, date, and daily high/low data
 - Adaptive chart behavior with fallback data handling and caching for improved performance
 - Customizable indicator colors for technical analysis tools
-- Redesigned Portfolio Growth Simulator interface with:
-  - Simplified, user-friendly input controls
+- Rebuilt Portfolio Growth Simulator interface with:
+  - Intuitive dropdown menus for each configuration section
+  - Real-time integration with user's active cryptocurrency investments
+  - Dynamic recalculation of projections and ROI as live data updates
   - Enhanced interactive charts with improved visual layout and responsiveness
   - Smoother animations and modern aesthetics
   - Simplified navigation for user accessibility
@@ -134,8 +142,14 @@ A comprehensive cryptocurrency investment and growth application that combines p
 - Improved color schemes, typography, and dark/light mode balance
 - Accessibility optimizations (ARIA compliance, keyboard navigation, contrast ratios)
 - Cleaner layout spacing and polished interface design
+- Consistent design language across live and simulated chart components
+- Professional visual presentation with accuracy across all timeframes
+- Improved clarity of investment insights, slider and dropdown controls
+- Enhanced responsive behaviors on all device types
 
 ### Backend
+- Optimized backend data flow to ensure faster, more accurate delivery of live user data to all front-end components
+- Reduced latency and maintained smooth synchronization across all components
 - Enhanced data refresh cycle with improved real-time synchronization between price, date, and daily high/low stats
 - Fixed timestamp management to ensure current live date updates dynamically with each price update
 - Refactored data flow architecture for more efficient real-time updates and reduced latency
@@ -162,7 +176,7 @@ A comprehensive cryptocurrency investment and growth application that combines p
 - AI-powered analytics processing for trend analysis, volatility detection, and smart recommendations
 - Provide endpoints for:
   - Current ICP price and comprehensive historical data with enhanced reliability and synchronized timestamps
-  - Portfolio simulation results and projections with optimized calculations
+  - Portfolio simulation results and projections with optimized calculations and real-time integration
   - Investment recommendations and alerts
   - Investment planner calculations and allocations
   - Chart data for all supported timeframes with fallback handling
@@ -196,8 +210,9 @@ A comprehensive cryptocurrency investment and growth application that combines p
 - Fixed real-time date and timestamp display that updates dynamically with price changes
 - Interactive hover tooltips on charts showing comprehensive information with consistent updates
 - Technical indicator toggle controls with color customization options
-- Redesigned Portfolio Growth Simulator interface with:
-  - Simplified, user-friendly input controls
+- Rebuilt Portfolio Growth Simulator interface with:
+  - Intuitive dropdown menus for each configuration section
+  - Real-time integration with user's active cryptocurrency investments
   - Enhanced interactive parameter controls with streamlined design
   - Improved visual layout and responsiveness of growth simulation chart
   - Smoother animations and modern aesthetics
@@ -216,4 +231,8 @@ A comprehensive cryptocurrency investment and growth application that combines p
 - GPU-accelerated animations and smooth visual transitions
 - Accessibility optimizations for ARIA compliance, keyboard navigation, and contrast ratios
 - Cleaner layout spacing and polished interface design
+- Consistent design language across live and simulated chart components
+- Professional visual presentation with accuracy maintained across all timeframes
+- Enhanced clarity of investment insights, slider and dropdown controls
+- Improved responsive behaviors on all device types
 - Application content displayed in English

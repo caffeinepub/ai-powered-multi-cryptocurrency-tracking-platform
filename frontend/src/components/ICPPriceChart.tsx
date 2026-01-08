@@ -82,7 +82,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
   const timestamp = label as number;
 
   return (
-    <div className="rounded-lg border bg-popover p-3 shadow-md">
+    <div className="rounded-lg border bg-popover p-3 shadow-md animate-fade-in">
       <div className="space-y-1.5">
         <p className="text-xs font-medium text-muted-foreground">
           {format(new Date(timestamp), 'MMM dd, yyyy HH:mm:ss')}
@@ -245,10 +245,10 @@ export function ICPPriceChart() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle>ICP Price Chart</CardTitle>
-          <CardDescription>Historical price data with customizable timeframes and indicators</CardDescription>
+          <CardTitle>ICP Live Price Chart</CardTitle>
+          <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -262,10 +262,10 @@ export function ICPPriceChart() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle>ICP Price Chart</CardTitle>
-          <CardDescription>Historical price data with customizable timeframes and indicators</CardDescription>
+          <CardTitle>ICP Live Price Chart</CardTitle>
+          <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -285,10 +285,10 @@ export function ICPPriceChart() {
 
   if (!historicalData || historicalData.length === 0) {
     return (
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle>ICP Price Chart</CardTitle>
-          <CardDescription>Historical price data with customizable timeframes and indicators</CardDescription>
+          <CardTitle>ICP Live Price Chart</CardTitle>
+          <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert>
@@ -331,28 +331,36 @@ export function ICPPriceChart() {
   // Get current timeframe config
   const currentConfig = TIMEFRAME_OPTIONS.find(opt => opt.value === selectedTimeframe);
 
+  // Calculate consistent Y-axis domain for stable scaling
+  const priceValues = chartData.map(d => d.price);
+  const minPrice = Math.min(...priceValues);
+  const maxPrice = Math.max(...priceValues);
+  const priceRange = maxPrice - minPrice;
+  const pricePadding = priceRange * 0.1; // 10% padding
+  const yAxisDomain = [minPrice - pricePadding, maxPrice + pricePadding];
+
   return (
-    <Card>
+    <Card className="animate-fade-in">
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                ICP Price Chart
+                ICP Live Price Chart
                 {isTransitioning && (
-                  <Badge variant="outline" className="border-blue-500 text-blue-500">
+                  <Badge variant="outline" className="border-blue-500 text-blue-500 animate-pulse">
                     <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
                     Loading
                   </Badge>
                 )}
               </CardTitle>
-              <CardDescription>Historical price data with customizable timeframes and indicators</CardDescription>
+              <CardDescription>Real-time historical price data with customizable timeframes and indicators</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {isFetching && !isTransitioning && (
-                <Badge variant="outline" className="border-blue-500 text-blue-500">
+                <Badge variant="outline" className="border-blue-500 text-blue-500 animate-pulse">
                   <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
-                  Updating
+                  Live Update
                 </Badge>
               )}
               {!isRecentData && (
@@ -384,10 +392,10 @@ export function ICPPriceChart() {
                         variant={selectedTimeframe === option.value ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleTimeframeChange(option.value)}
-                        className={`h-9 px-3 text-xs font-medium transition-all ${
+                        className={`h-9 px-3 text-xs font-medium transition-all duration-200 ${
                           selectedTimeframe === option.value
-                            ? 'shadow-md ring-2 ring-primary/20'
-                            : 'hover:border-primary/50'
+                            ? 'shadow-md ring-2 ring-primary/20 scale-105'
+                            : 'hover:border-primary/50 hover:scale-105'
                         }`}
                         disabled={isFetching || isTransitioning}
                       >
@@ -478,14 +486,14 @@ export function ICPPriceChart() {
       </CardHeader>
       <CardContent>
         <div className={`space-y-4 transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
-          {/* Main Price Chart */}
+          {/* Main Price Chart with Consistent Scaling */}
           <ResponsiveContainer width="100%" height={mainChartHeight}>
             <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} className="text-xs" minTickGap={50} />
               <YAxis
                 yAxisId="price"
-                domain={['auto', 'auto']}
+                domain={yAxisDomain}
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 className="text-xs"
               />
@@ -515,6 +523,8 @@ export function ICPPriceChart() {
                 dot={false}
                 activeDot={{ r: 6 }}
                 name="Price"
+                isAnimationActive={!isTransitioning}
+                animationDuration={300}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -536,6 +546,8 @@ export function ICPPriceChart() {
                   strokeWidth={2}
                   dot={false}
                   name="RSI"
+                  isAnimationActive={!isTransitioning}
+                  animationDuration={300}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -550,8 +562,8 @@ export function ICPPriceChart() {
                 <YAxis className="text-xs" />
                 <RechartsTooltip content={<CustomTooltip />} />
                 <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
-                <Bar dataKey="macdHistogram" fill="hsl(220 70% 50%)" opacity={0.6} name="Histogram" />
-                <Line type="monotone" dataKey="macd" stroke="hsl(220 100% 60%)" strokeWidth={2} dot={false} name="MACD" />
+                <Bar dataKey="macdHistogram" fill="hsl(220 70% 50%)" opacity={0.6} name="Histogram" isAnimationActive={!isTransitioning} />
+                <Line type="monotone" dataKey="macd" stroke="hsl(220 100% 60%)" strokeWidth={2} dot={false} name="MACD" isAnimationActive={!isTransitioning} animationDuration={300} />
                 <Line
                   type="monotone"
                   dataKey="macdSignal"
@@ -559,6 +571,8 @@ export function ICPPriceChart() {
                   strokeWidth={2}
                   dot={false}
                   name="Signal"
+                  isAnimationActive={!isTransitioning}
+                  animationDuration={300}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -578,6 +592,7 @@ export function ICPPriceChart() {
                   fill="hsl(142 76% 36%)"
                   opacity={0.8}
                   name="TTM Momentum"
+                  isAnimationActive={!isTransitioning}
                   shape={(props: any) => {
                     const { x, y, width, height, payload } = props;
                     const fill = payload.ttmSqueeze ? 'hsl(0 84% 60%)' : 'hsl(142 76% 36%)';
