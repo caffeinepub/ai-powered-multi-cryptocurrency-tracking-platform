@@ -8,8 +8,9 @@ import { useICPPrice, useICPHistoricalData, usePriceAlerts, useDailyHighLow } fr
 import { ICPPriceChart } from '@/components/ICPPriceChart';
 import { PortfolioCard } from '@/components/PortfolioCard';
 import { PriceAlertsCard } from '@/components/PriceAlertsCard';
-import { TrendingUp, TrendingDown, AlertCircle, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 export function ICPTracker() {
   const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
@@ -18,6 +19,16 @@ export function ICPTracker() {
   const { data: dailyHighLow, isLoading: isHighLowLoading } = useDailyHighLow();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [notifiedAlerts, setNotifiedAlerts] = useState<Set<number>>(new Set());
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for live display
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Convert alerts from backend format [price, isTriggered] to frontend format
   const alerts = alertsData?.map(([price, isTriggered]) => ({ price, isTriggered }));
@@ -104,15 +115,20 @@ export function ICPTracker() {
       </div>
 
       {/* Current Price Card */}
-      <Card className="border-2 bg-gradient-to-br from-card to-card/50">
+      <Card className="border-2 bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-lg">
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div>
+            <div className="space-y-1">
               <CardTitle className="text-2xl">Internet Computer (ICP)</CardTitle>
-              <CardDescription>Live Price • Updates every 30s</CardDescription>
+              <CardDescription className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="font-mono text-xs">
+                  {format(currentTime, 'MMM dd, yyyy • HH:mm:ss')}
+                </span>
+              </CardDescription>
             </div>
             {currentPrice && (
-              <Badge variant={isPositive ? 'default' : 'destructive'} className="text-sm">
+              <Badge variant={isPositive ? 'default' : 'destructive'} className="text-sm animate-scale-in">
                 {isPositive ? <TrendingUp className="mr-1 h-4 w-4" /> : <TrendingDown className="mr-1 h-4 w-4" />}
                 {isPositive ? '+' : ''}
                 {priceChange24h.toFixed(2)}%
@@ -129,10 +145,10 @@ export function ICPTracker() {
           ) : currentPrice ? (
             <div className="space-y-4">
               <div>
-                <div className="text-5xl font-bold tracking-tight">
+                <div className="text-5xl font-bold tracking-tight transition-all duration-300">
                   ${currentPrice.toFixed(3)}
                 </div>
-                <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="mt-3 flex items-center gap-4 text-sm text-muted-foreground">
                   {isHighLowLoading ? (
                     <>
                       <Skeleton className="h-4 w-32" />
@@ -141,9 +157,19 @@ export function ICPTracker() {
                     </>
                   ) : dailyHighLow ? (
                     <>
-                      <span>24h High: ${dailyHighLow.high.toFixed(3)}</span>
+                      <span className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground/70">24h High:</span>
+                        <span className="font-semibold text-green-600 dark:text-green-400">
+                          ${dailyHighLow.high.toFixed(3)}
+                        </span>
+                      </span>
                       <span>•</span>
-                      <span>24h Low: ${dailyHighLow.low.toFixed(3)}</span>
+                      <span className="flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground/70">24h Low:</span>
+                        <span className="font-semibold text-red-600 dark:text-red-400">
+                          ${dailyHighLow.low.toFixed(3)}
+                        </span>
+                      </span>
                     </>
                   ) : null}
                 </div>
