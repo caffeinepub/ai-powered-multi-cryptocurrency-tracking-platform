@@ -8,8 +8,12 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const AlertStatus = IDL.Record({
-  'isActive' : IDL.Bool,
+export const PriceAlertStatus = IDL.Record({
+  'isTriggered' : IDL.Bool,
+  'price' : IDL.Float64,
+});
+export const PriceCache = IDL.Record({
+  'timestamp' : IDL.Int,
   'price' : IDL.Float64,
 });
 export const ICPPortfolio = IDL.Record({
@@ -36,12 +40,16 @@ export const TransformationOutput = IDL.Record({
 });
 
 export const idlService = IDL.Service({
-  'deleteAlert' : IDL.Func([IDL.Float64], [], []),
-  'getAlertList' : IDL.Func([], [IDL.Vec(AlertStatus)], ['query']),
-  'getHistoricalPrices' : IDL.Func([], [IDL.Vec(IDL.Float64)], ['query']),
+  'addPriceToCache' : IDL.Func([IDL.Float64], [], []),
+  'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
+  'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
+  'getCurrentPortfolioValue' : IDL.Func([], [IDL.Float64], ['query']),
   'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
+  'getLastCachedPrice' : IDL.Func([], [IDL.Opt(IDL.Float64)], []),
   'getPortfolioSummary' : IDL.Func([], [ICPPortfolio], ['query']),
-  'setAlertActive' : IDL.Func([IDL.Float64, IDL.Bool], [], []),
+  'getTopCryptos' : IDL.Func([], [IDL.Text], []),
+  'recordNewICPPrice' : IDL.Func([IDL.Float64], [], []),
+  'toggleAlertStatus' : IDL.Func([IDL.Float64], [], []),
   'transform' : IDL.Func(
       [TransformationInput],
       [TransformationOutput],
@@ -52,8 +60,12 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const AlertStatus = IDL.Record({
-    'isActive' : IDL.Bool,
+  const PriceAlertStatus = IDL.Record({
+    'isTriggered' : IDL.Bool,
+    'price' : IDL.Float64,
+  });
+  const PriceCache = IDL.Record({
+    'timestamp' : IDL.Int,
     'price' : IDL.Float64,
   });
   const ICPPortfolio = IDL.Record({
@@ -77,12 +89,16 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    'deleteAlert' : IDL.Func([IDL.Float64], [], []),
-    'getAlertList' : IDL.Func([], [IDL.Vec(AlertStatus)], ['query']),
-    'getHistoricalPrices' : IDL.Func([], [IDL.Vec(IDL.Float64)], ['query']),
+    'addPriceToCache' : IDL.Func([IDL.Float64], [], []),
+    'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
+    'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
+    'getCurrentPortfolioValue' : IDL.Func([], [IDL.Float64], ['query']),
     'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
+    'getLastCachedPrice' : IDL.Func([], [IDL.Opt(IDL.Float64)], []),
     'getPortfolioSummary' : IDL.Func([], [ICPPortfolio], ['query']),
-    'setAlertActive' : IDL.Func([IDL.Float64, IDL.Bool], [], []),
+    'getTopCryptos' : IDL.Func([], [IDL.Text], []),
+    'recordNewICPPrice' : IDL.Func([IDL.Float64], [], []),
+    'toggleAlertStatus' : IDL.Func([IDL.Float64], [], []),
     'transform' : IDL.Func(
         [TransformationInput],
         [TransformationOutput],

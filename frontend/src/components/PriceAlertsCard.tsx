@@ -4,22 +4,68 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
-import { useToggleAlert, useAddAlert, useDeleteAlert } from '@/hooks/useQueries';
-import { Bell, BellOff, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAddAlert, useRemoveAlert, useToggleAlert } from '@/hooks/useQueries';
+import { Bell, BellOff, Check, X, Plus, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import type { AlertStatus } from '@/backend';
+import type { PriceAlertStatus } from '@/backend';
 
 interface PriceAlertsCardProps {
-  alerts?: AlertStatus[];
+  alerts?: PriceAlertStatus[];
   currentPrice?: number;
 }
 
 export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) {
   const [newAlertPrice, setNewAlertPrice] = useState('');
-  const toggleAlert = useToggleAlert();
   const addAlert = useAddAlert();
-  const deleteAlert = useDeleteAlert();
+  const removeAlert = useRemoveAlert();
+  const toggleAlert = useToggleAlert();
+
+  const handleAddAlert = async () => {
+    const price = parseFloat(newAlertPrice);
+    
+    if (isNaN(price) || price <= 0) {
+      toast.error('Invalid price', {
+        description: 'Please enter a valid price greater than 0',
+      });
+      return;
+    }
+
+    try {
+      await addAlert.mutateAsync(price);
+      setNewAlertPrice('');
+      toast.success('Alert added', {
+        description: `You'll be notified when ICP reaches $${price.toFixed(3)}`,
+      });
+    } catch (error) {
+      toast.error('Failed to add alert', {
+        description: error instanceof Error ? error.message : 'Please try again',
+      });
+    }
+  };
+
+  const handleRemoveAlert = async (price: number) => {
+    try {
+      await removeAlert.mutateAsync(price);
+      toast.success('Alert removed', {
+        description: `Alert for $${price.toFixed(3)} has been removed`,
+      });
+    } catch (error) {
+      toast.error('Failed to remove alert', {
+        description: 'Please try again',
+      });
+    }
+  };
+
+  const handleToggle = async (price: number) => {
+    try {
+      await toggleAlert.mutateAsync(price);
+    } catch (error) {
+      toast.error('Failed to toggle alert', {
+        description: 'Please try again',
+      });
+    }
+  };
 
   if (!alerts) {
     return (
@@ -39,72 +85,6 @@ export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) 
     );
   }
 
-  const handleToggle = async (price: number, currentActive: boolean) => {
-    try {
-      await toggleAlert.mutateAsync({ price, active: !currentActive });
-      toast.success(
-        !currentActive ? 'Alert activated' : 'Alert deactivated',
-        {
-          description: `Price alert for $${price.toFixed(3)} has been ${!currentActive ? 'activated' : 'deactivated'}.`,
-        }
-      );
-    } catch (error) {
-      toast.error('Failed to toggle alert', {
-        description: 'Please try again.',
-      });
-    }
-  };
-
-  const handleAddAlert = async () => {
-    const price = parseFloat(newAlertPrice);
-    
-    if (isNaN(price) || price <= 0) {
-      toast.error('Invalid price', {
-        description: 'Please enter a valid price greater than 0.',
-      });
-      return;
-    }
-
-    // Check if alert already exists
-    if (alerts.some(alert => Math.abs(alert.price - price) < 0.001)) {
-      toast.error('Alert already exists', {
-        description: `An alert for $${price.toFixed(3)} already exists.`,
-      });
-      return;
-    }
-
-    try {
-      await addAlert.mutateAsync(price);
-      setNewAlertPrice('');
-      toast.success('Alert added', {
-        description: `Price alert for $${price.toFixed(3)} has been created.`,
-      });
-    } catch (error) {
-      toast.error('Failed to add alert', {
-        description: 'Please try again.',
-      });
-    }
-  };
-
-  const handleDeleteAlert = async (price: number) => {
-    try {
-      await deleteAlert.mutateAsync(price);
-      toast.success('Alert deleted', {
-        description: `Price alert for $${price.toFixed(3)} has been removed.`,
-      });
-    } catch (error) {
-      toast.error('Failed to delete alert', {
-        description: 'Please try again.',
-      });
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleAddAlert();
-    }
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -114,106 +94,130 @@ export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) 
               <Bell className="h-5 w-5" />
               Price Alerts
             </CardTitle>
-            <CardDescription>Target price notifications</CardDescription>
+            <CardDescription>Manage target price notifications</CardDescription>
           </div>
+          <Badge variant="outline">{alerts.length} active</Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Add new alert input */}
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              step="0.001"
-              placeholder="Enter target price (e.g., 5.50)"
-              value={newAlertPrice}
-              onChange={(e) => setNewAlertPrice(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={addAlert.isPending}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleAddAlert}
-              disabled={addAlert.isPending || !newAlertPrice}
-              size="icon"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+      <CardContent className="space-y-4">
+        {/* Add New Alert */}
+        <div className="flex gap-2">
+          <Input
+            type="number"
+            step="0.001"
+            placeholder="Enter target price (e.g., 5.50)"
+            value={newAlertPrice}
+            onChange={(e) => setNewAlertPrice(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleAddAlert();
+              }
+            }}
+            disabled={addAlert.isPending}
+          />
+          <Button
+            onClick={handleAddAlert}
+            disabled={addAlert.isPending || !newAlertPrice}
+            size="icon"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
 
-          {/* Alert list */}
-          <div className="space-y-3">
-            {alerts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No price alerts configured</p>
-                <p className="text-xs mt-1">Add a target price above to get started</p>
-              </div>
-            ) : (
-              alerts.map((alert) => {
-                const isAbove = currentPrice ? currentPrice > alert.price : false;
-                const isNear = currentPrice ? Math.abs(currentPrice - alert.price) / alert.price < 0.05 : false;
-                const isTriggered = currentPrice ? 
-                  (isAbove && alert.price < currentPrice) || (!isAbove && alert.price > currentPrice) : false;
+        {/* Alert List */}
+        {alerts.length === 0 ? (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              No active alerts. Add a target price to get notified when ICP reaches it.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-2">
+            {alerts.map((alert) => {
+              const isAbove = currentPrice ? currentPrice > alert.price : false;
+              const isNear = currentPrice ? Math.abs(currentPrice - alert.price) / alert.price < 0.05 : false;
+              const percentDiff = currentPrice 
+                ? ((alert.price - currentPrice) / currentPrice * 100).toFixed(1)
+                : '0';
 
-                return (
-                  <div
-                    key={alert.price}
-                    className={`flex items-center justify-between rounded-lg border p-4 transition-colors ${
-                      isNear && alert.isActive ? 'border-destructive/50 bg-destructive/5' : 'bg-muted/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                        alert.isActive ? 'bg-primary/10' : 'bg-muted'
-                      }`}>
-                        {alert.isActive ? (
-                          <Bell className="h-5 w-5 text-primary" />
-                        ) : (
-                          <BellOff className="h-5 w-5 text-muted-foreground" />
+              return (
+                <div
+                  key={alert.price}
+                  className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
+                    alert.isTriggered 
+                      ? 'border-green-500/50 bg-green-500/10' 
+                      : isNear 
+                      ? 'border-yellow-500/50 bg-yellow-500/5' 
+                      : 'bg-muted/30'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-full ${
+                      alert.isTriggered 
+                        ? 'bg-green-500/20' 
+                        : isNear 
+                        ? 'bg-yellow-500/20' 
+                        : 'bg-muted'
+                    }`}>
+                      {alert.isTriggered ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : isNear ? (
+                        <AlertCircle className="h-4 w-4 text-yellow-500" />
+                      ) : (
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">${alert.price.toFixed(3)}</p>
+                        {alert.isTriggered && (
+                          <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
+                            Triggered
+                          </Badge>
+                        )}
+                        {!alert.isTriggered && isNear && (
+                          <Badge variant="outline" className="text-yellow-500 border-yellow-500 text-xs">
+                            Near
+                          </Badge>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <p className="font-semibold">${alert.price.toFixed(3)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {currentPrice ? (
-                            <>
-                              {isAbove ? 'Above target' : 'Below target'}
-                              {isNear && alert.isActive && ' • Near target!'}
-                            </>
-                          ) : (
-                            'Waiting for price data...'
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {alert.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                        <Switch
-                          checked={alert.isActive}
-                          onCheckedChange={() => handleToggle(alert.price, alert.isActive)}
-                          disabled={toggleAlert.isPending}
-                        />
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteAlert(alert.price)}
-                        disabled={deleteAlert.isPending}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        {isAbove ? `${percentDiff}% below current` : `${Math.abs(parseFloat(percentDiff))}% above current`}
+                      </p>
                     </div>
                   </div>
-                );
-              })
-            )}
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => handleToggle(alert.price)}
+                      disabled={toggleAlert.isPending}
+                      title={alert.isTriggered ? 'Mark as pending' : 'Mark as triggered'}
+                    >
+                      {alert.isTriggered ? (
+                        <BellOff className="h-4 w-4" />
+                      ) : (
+                        <Bell className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      onClick={() => handleRemoveAlert(alert.price)}
+                      disabled={removeAlert.isPending}
+                      title="Remove alert"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

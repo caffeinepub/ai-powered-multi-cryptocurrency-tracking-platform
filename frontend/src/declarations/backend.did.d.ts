@@ -10,8 +10,9 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface AlertStatus { 'isActive' : boolean, 'price' : number }
 export interface ICPPortfolio { 'coins' : number, 'avgCost' : number }
+export interface PriceAlertStatus { 'isTriggered' : boolean, 'price' : number }
+export interface PriceCache { 'timestamp' : bigint, 'price' : number }
 export interface TransformationInput {
   'context' : Uint8Array,
   'response' : http_request_result,
@@ -28,12 +29,16 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
-  'deleteAlert' : ActorMethod<[number], undefined>,
-  'getAlertList' : ActorMethod<[], Array<AlertStatus>>,
-  'getHistoricalPrices' : ActorMethod<[], Array<number>>,
+  'addPriceToCache' : ActorMethod<[number], undefined>,
+  'getAlerts' : ActorMethod<[], Array<PriceAlertStatus>>,
+  'getCachedPriceHistory' : ActorMethod<[], Array<PriceCache>>,
+  'getCurrentPortfolioValue' : ActorMethod<[], number>,
   'getICPLivePrice' : ActorMethod<[], string>,
+  'getLastCachedPrice' : ActorMethod<[], [] | [number]>,
   'getPortfolioSummary' : ActorMethod<[], ICPPortfolio>,
-  'setAlertActive' : ActorMethod<[number, boolean], undefined>,
+  'getTopCryptos' : ActorMethod<[], string>,
+  'recordNewICPPrice' : ActorMethod<[number], undefined>,
+  'toggleAlertStatus' : ActorMethod<[number], undefined>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
 }
 export declare const idlService: IDL.ServiceClass;

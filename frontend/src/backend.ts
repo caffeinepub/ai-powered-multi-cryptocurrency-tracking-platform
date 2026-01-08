@@ -89,6 +89,15 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface PriceCache {
+    timestamp: bigint;
+    price: number;
+}
+export interface TransformationOutput {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
 export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
@@ -97,14 +106,9 @@ export interface ICPPortfolio {
     coins: number;
     avgCost: number;
 }
-export interface AlertStatus {
-    isActive: boolean;
+export interface PriceAlertStatus {
+    isTriggered: boolean;
     price: number;
-}
-export interface TransformationOutput {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<http_header>;
 }
 export interface http_header {
     value: string;
@@ -116,55 +120,73 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    deleteAlert(price: number): Promise<void>;
-    getAlertList(): Promise<Array<AlertStatus>>;
-    getHistoricalPrices(): Promise<Array<number>>;
+    addPriceToCache(price: number): Promise<void>;
+    getAlerts(): Promise<Array<PriceAlertStatus>>;
+    getCachedPriceHistory(): Promise<Array<PriceCache>>;
+    getCurrentPortfolioValue(): Promise<number>;
     getICPLivePrice(): Promise<string>;
+    getLastCachedPrice(): Promise<number | null>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
-    setAlertActive(price: number, active: boolean): Promise<void>;
+    getTopCryptos(): Promise<string>;
+    recordNewICPPrice(price: number): Promise<void>;
+    toggleAlertStatus(price: number): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
 }
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async deleteAlert(arg0: number): Promise<void> {
+    async addPriceToCache(arg0: number): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteAlert(arg0);
+                const result = await this.actor.addPriceToCache(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteAlert(arg0);
+            const result = await this.actor.addPriceToCache(arg0);
             return result;
         }
     }
-    async getAlertList(): Promise<Array<AlertStatus>> {
+    async getAlerts(): Promise<Array<PriceAlertStatus>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAlertList();
+                const result = await this.actor.getAlerts();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAlertList();
+            const result = await this.actor.getAlerts();
             return result;
         }
     }
-    async getHistoricalPrices(): Promise<Array<number>> {
+    async getCachedPriceHistory(): Promise<Array<PriceCache>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getHistoricalPrices();
+                const result = await this.actor.getCachedPriceHistory();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getHistoricalPrices();
+            const result = await this.actor.getCachedPriceHistory();
+            return result;
+        }
+    }
+    async getCurrentPortfolioValue(): Promise<number> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCurrentPortfolioValue();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCurrentPortfolioValue();
             return result;
         }
     }
@@ -182,6 +204,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getLastCachedPrice(): Promise<number | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLastCachedPrice();
+                return from_candid_opt_n1(this.uploadFile, this.downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLastCachedPrice();
+            return from_candid_opt_n1(this.uploadFile, this.downloadFile, result);
+        }
+    }
     async getPortfolioSummary(): Promise<ICPPortfolio> {
         if (this.processError) {
             try {
@@ -196,17 +232,45 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async setAlertActive(arg0: number, arg1: boolean): Promise<void> {
+    async getTopCryptos(): Promise<string> {
         if (this.processError) {
             try {
-                const result = await this.actor.setAlertActive(arg0, arg1);
+                const result = await this.actor.getTopCryptos();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setAlertActive(arg0, arg1);
+            const result = await this.actor.getTopCryptos();
+            return result;
+        }
+    }
+    async recordNewICPPrice(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recordNewICPPrice(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recordNewICPPrice(arg0);
+            return result;
+        }
+    }
+    async toggleAlertStatus(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.toggleAlertStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.toggleAlertStatus(arg0);
             return result;
         }
     }
@@ -224,6 +288,9 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+}
+function from_candid_opt_n1(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [number]): number | null {
+    return value.length === 0 ? null : value[0];
 }
 export interface CreateActorOptions {
     agent?: Agent;

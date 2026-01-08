@@ -17,18 +17,18 @@ export function ICPTracker() {
   const { data: portfolio, isLoading: isPortfolioLoading } = usePortfolioSummary();
   const { data: alerts } = usePriceAlerts();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
-  const [triggeredAlerts, setTriggeredAlerts] = useState<Set<number>>(new Set());
+  const [notifiedAlerts, setNotifiedAlerts] = useState<Set<number>>(new Set());
 
   // Calculate 24h price change from historical data
-  const priceChange24h = historicalData && currentPrice
+  const priceChange24h = historicalData && currentPrice && historicalData.length > 0
     ? ((currentPrice - historicalData[0].price) / historicalData[0].price) * 100
     : 0;
 
-  const high24h = historicalData
+  const high24h = historicalData && historicalData.length > 0
     ? Math.max(...historicalData.map(d => d.price), currentPrice || 0)
     : currentPrice || 0;
 
-  const low24h = historicalData
+  const low24h = historicalData && historicalData.length > 0
     ? Math.min(...historicalData.map(d => d.price), currentPrice || 0)
     : currentPrice || 0;
 
@@ -36,17 +36,18 @@ export function ICPTracker() {
   useEffect(() => {
     if (currentPrice && alerts && previousPrice !== null) {
       alerts.forEach((alert) => {
-        if (alert.isActive && !triggeredAlerts.has(alert.price)) {
+        // Only notify for alerts that haven't been notified yet in this session
+        if (!notifiedAlerts.has(alert.price)) {
           // Check if price crossed the alert threshold
-          const crossedUp = previousPrice < alert.price && currentPrice >= alert.price;
-          const crossedDown = previousPrice > alert.price && currentPrice <= alert.price;
-          
-          if (crossedUp || crossedDown) {
-            setTriggeredAlerts(prev => new Set(prev).add(alert.price));
+          if (
+            (previousPrice < alert.price && currentPrice >= alert.price) ||
+            (previousPrice > alert.price && currentPrice <= alert.price)
+          ) {
             toast.success(`Price Alert Triggered!`, {
-              description: `ICP has ${crossedUp ? 'reached' : 'dropped to'} $${alert.price.toFixed(3)}. Current price: $${currentPrice.toFixed(3)}`,
+              description: `ICP has reached $${alert.price.toFixed(3)}. Current price: $${currentPrice.toFixed(3)}`,
               duration: 10000,
             });
+            setNotifiedAlerts(prev => new Set(prev).add(alert.price));
           }
         }
       });
@@ -55,23 +56,22 @@ export function ICPTracker() {
     } else if (currentPrice && previousPrice === null) {
       setPreviousPrice(currentPrice);
     }
-  }, [currentPrice, alerts, previousPrice, triggeredAlerts]);
+  }, [currentPrice, alerts, previousPrice, notifiedAlerts]);
 
-  // Reset triggered alerts when alerts change (e.g., when toggled off/on)
+  // Reset notified alerts when alerts change (user adds/removes alerts)
   useEffect(() => {
     if (alerts) {
-      setTriggeredAlerts(prev => {
-        const newSet = new Set(prev);
-        // Remove alerts that are no longer active
+      setNotifiedAlerts(prev => {
+        const newSet = new Set<number>();
         alerts.forEach(alert => {
-          if (!alert.isActive) {
-            newSet.delete(alert.price);
+          if (prev.has(alert.price)) {
+            newSet.add(alert.price);
           }
         });
         return newSet;
       });
     }
-  }, [alerts]);
+  }, [alerts?.length]);
 
   if (priceError) {
     return (
@@ -148,7 +148,7 @@ export function ICPTracker() {
         </CardContent>
       </Card>
 
-      {/* Chart */}
+      {/* Chart - Always display, with fallback handling inside component */}
       <ICPPriceChart />
 
       {/* Portfolio and Alerts */}

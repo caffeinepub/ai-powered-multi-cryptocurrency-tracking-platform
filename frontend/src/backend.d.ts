@@ -7,6 +7,15 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface PriceCache {
+    timestamp: bigint;
+    price: number;
+}
+export interface TransformationOutput {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
 export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
@@ -15,14 +24,9 @@ export interface ICPPortfolio {
     coins: number;
     avgCost: number;
 }
-export interface AlertStatus {
-    isActive: boolean;
+export interface PriceAlertStatus {
+    isTriggered: boolean;
     price: number;
-}
-export interface TransformationOutput {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<http_header>;
 }
 export interface http_header {
     value: string;
@@ -34,11 +38,15 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    deleteAlert(price: number): Promise<void>;
-    getAlertList(): Promise<Array<AlertStatus>>;
-    getHistoricalPrices(): Promise<Array<number>>;
+    addPriceToCache(price: number): Promise<void>;
+    getAlerts(): Promise<Array<PriceAlertStatus>>;
+    getCachedPriceHistory(): Promise<Array<PriceCache>>;
+    getCurrentPortfolioValue(): Promise<number>;
     getICPLivePrice(): Promise<string>;
+    getLastCachedPrice(): Promise<number | null>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
-    setAlertActive(price: number, active: boolean): Promise<void>;
+    getTopCryptos(): Promise<string>;
+    recordNewICPPrice(price: number): Promise<void>;
+    toggleAlertStatus(price: number): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
 }

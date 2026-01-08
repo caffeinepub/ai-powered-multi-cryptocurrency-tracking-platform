@@ -2,11 +2,11 @@
   "frontend/src/App.tsx": "Main application component that sets up providers (Theme, QueryClient) and renders the header, main content (ICP tracker and Top 50 dashboard), and footer.",
   "frontend/src/components/Header.tsx": "Application header with branding, logo, and title displaying \"CryptoTrack\" with a trending icon.",
   "frontend/src/components/Footer.tsx": "Footer component with copyright notice, caffeine.ai attribution, and data source information.",
-  "frontend/src/components/ICPTracker.tsx": "Main ICP tracking section displaying current price with 24h stats, price chart, portfolio summary, and price alerts with real-time alert triggering notifications and improved state management.",
-  "frontend/src/components/ICPPriceChart.tsx": "Recharts line chart component displaying 7-day ICP price history with dynamic reference lines for active/inactive alerts, fallback to cached data when API fails, and retry functionality with visual indicators.",
+  "frontend/src/components/ICPTracker.tsx": "Main ICP tracking section with current price display, 24h stats, price chart with fallback support, portfolio summary, and enhanced price alerts with session-based notification tracking.",
+  "frontend/src/components/ICPPriceChart.tsx": "Recharts line chart displaying 7-day ICP price history with dynamic reference lines for all active alerts, cached data indicator badge, and graceful error handling.",
   "frontend/src/components/PortfolioCard.tsx": "Card component showing investment portfolio details including total coins, average cost, current value, and profit/loss calculations with proper loading and error states.",
-  "frontend/src/components/PriceAlertsCard.tsx": "Card component for managing price alerts with input field to add new alerts, switch to toggle active/inactive status, delete button for each alert, real-time status indicators, and empty state when no alerts exist.",
+  "frontend/src/components/PriceAlertsCard.tsx": "Card component for managing price alerts with UI to add new alerts via input field, view all active alerts with visual states (triggered/near/pending), and remove alerts with automatic React Query revalidation.",
   "frontend/src/components/Top50Dashboard.tsx": "Dashboard section displaying top 50 cryptocurrencies in a sortable table with search functionality, showing price, 24h change, market cap, and volume with enhanced error handling and retry functionality.",
-  "frontend/src/hooks/useQueries.ts": "Custom React Query hooks for fetching ICP price, historical data with fallback to cached data on error, top 50 cryptocurrencies directly from CoinGecko API, portfolio summary, and managing price alerts with add, delete, and toggle functionality including automatic query invalidation.",
+  "frontend/src/hooks/useQueries.ts": "Custom React Query hooks for fetching ICP price, historical data with fallback to cached backend data, top 50 cryptocurrencies, portfolio data, and managing price alerts with add/remove/toggle functionality.",
   "frontend/src/index.css": "Global styles with OKLCH color system featuring a purple/blue crypto-themed color palette for both light and dark modes."
 }
