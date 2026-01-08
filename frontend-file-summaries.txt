@@ -1,0 +1,12 @@
+{
+  "frontend/src/App.tsx": "Main application component that sets up providers (Theme, QueryClient) and renders the header, main content (ICP tracker and Top 50 dashboard), and footer.",
+  "frontend/src/components/Header.tsx": "Application header with branding, logo, and title displaying \"CryptoTrack\" with a trending icon.",
+  "frontend/src/components/Footer.tsx": "Footer component with copyright notice, caffeine.ai attribution, and data source information.",
+  "frontend/src/components/ICPTracker.tsx": "Main ICP tracking section that displays current price, 24h stats, price chart, portfolio summary, and price alerts with real-time updates and alert notifications.",
+  "frontend/src/components/ICPPriceChart.tsx": "Recharts line chart component displaying 7-day ICP price history with reference lines for alert price levels.",
+  "frontend/src/components/PortfolioCard.tsx": "Card component showing investment portfolio details including total coins, average cost, current value, and profit/loss calculations.",
+  "frontend/src/components/PriceAlertsCard.tsx": "Card component displaying price alert targets with toggle functionality and visual indicators for triggered/near alerts.",
+  "frontend/src/components/Top50Dashboard.tsx": "Dashboard section displaying top 50 cryptocurrencies in a sortable table with search functionality, showing price, 24h change, market cap, and volume.",
+  "frontend/src/hooks/useQueries.ts": "Custom React Query hooks for fetching ICP price data from CoinGecko API, top 50 cryptocurrencies, portfolio summary from backend, and managing price alerts with automatic polling.",
+  "frontend/src/index.css": "Global styles with OKLCH color system featuring a purple/blue crypto-themed color palette for both light and dark modes."
+}
