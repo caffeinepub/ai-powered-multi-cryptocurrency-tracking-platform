@@ -98,6 +98,10 @@ export interface TransformationOutput {
     body: Uint8Array;
     headers: Array<http_header>;
 }
+export interface PriceRange {
+    low: number;
+    high: number;
+}
 export interface TimeframeParams {
     timeframe: string;
     intervalNanos: bigint;
@@ -130,6 +134,7 @@ export interface http_request_result {
 export interface backendInterface {
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
+    getDailyHighLowFromCache(): Promise<PriceRange>;
     getHistoricalDataRange(): Promise<{
         end: bigint;
         start: bigint;
@@ -170,6 +175,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getCachedPriceHistory();
+            return result;
+        }
+    }
+    async getDailyHighLowFromCache(): Promise<PriceRange> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDailyHighLowFromCache();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDailyHighLowFromCache();
             return result;
         }
     }

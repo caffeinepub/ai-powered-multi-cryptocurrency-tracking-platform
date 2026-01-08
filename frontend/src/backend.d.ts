@@ -16,6 +16,10 @@ export interface TransformationOutput {
     body: Uint8Array;
     headers: Array<http_header>;
 }
+export interface PriceRange {
+    low: number;
+    high: number;
+}
 export interface TimeframeParams {
     timeframe: string;
     intervalNanos: bigint;
@@ -48,6 +52,7 @@ export interface http_request_result {
 export interface backendInterface {
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
+    getDailyHighLowFromCache(): Promise<PriceRange>;
     getHistoricalDataRange(): Promise<{
         end: bigint;
         start: bigint;

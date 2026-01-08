@@ -46,6 +46,11 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Visual indicators for different alert states
   - Synchronize alert actions with backend through React Query mutation hooks
   - Instant UI updates when alerts are added, removed, or status changes
+- Display dynamic 24-hour high and low prices:
+  - Calculate and display current day's high and low based on live ICP price data
+  - Automatically update these values when new price data arrives during the user's session
+  - Show real daily low/high within the current 24-hour timeframe
+  - Maintain clean and consistent visual formatting with the current price display section
 - Show investment portfolio summary with accurate real-time calculations:
   - Total coins: 1864 ICP
   - Average cost: $6.152
@@ -86,6 +91,10 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Technical indicator controls with toggle functionality for RSI, MACD, and TTM Squeeze
 - Proper indicator calculation and rendering based on selected timeframe with refined handling of varying data densities
 - Robust synchronization layer using enhanced useQueries hook to prefetch and cache data for multiple timeframes
+- Dynamic 24-hour high/low calculation and display:
+  - Track and calculate current day's high and low prices from live price data
+  - Update high/low values automatically when new price data is received
+  - Display values with consistent formatting alongside current price information
 - Sortable and filterable table for top 50 cryptocurrencies with column-specific filters
 - Real-time data updates without page refresh
 - Comprehensive price alert management interface:
@@ -128,6 +137,11 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Optimize caching strategy to handle high-frequency data while maintaining performance and data consistency
   - Synchronize caching with frontend chart refresh and timeframe switching for improved responsiveness
   - Fix backend data provision to ensure accurate historical data for all 15 timeframe options
+- Track and provide 24-hour high/low price data:
+  - Calculate current day's high and low prices from cached price data
+  - Provide endpoint to retrieve current 24-hour high/low values
+  - Update high/low calculations as new price data is received
+  - Ensure accurate 24-hour timeframe calculations based on current time
 - Calculate technical indicators for chart display:
   - RSI calculation based on selected timeframe data with enhanced handling of varying data densities
   - MACD calculation with proper signal and histogram values across different timeframes
@@ -139,6 +153,7 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
 - Provide endpoints for:
   - Current ICP price and comprehensive historical data with precise time-based intervals
+  - Current 24-hour high and low prices
   - Chart data for all supported timeframes with accurate resampling and fallback support
   - Technical indicator data (RSI, MACD, TTM Squeeze) calculated for the selected timeframe with enhanced data density handling
   - Top 50 cryptocurrencies market data
@@ -153,6 +168,7 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Backend stores investment portfolio information
 - Backend stores price alert configurations with comprehensive status tracking
 - Backend caches extensive price data with optimized time-based indexing for reliable chart display and improved synchronization
+- Backend tracks and calculates 24-hour high/low prices from cached price data
 - Backend fetches real-time price data from CoinGecko API via HTTP outcalls
 - Comprehensive historical price data for all chart timeframes with cached fallbacks and precise resolution matching using accurate nanosecond conversions
 - Clean data transformation from external API responses to frontend-consumable format
@@ -166,6 +182,7 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Responsive charts with comprehensive timeframe selection and reliable data display with improved load times
 - Interactive hover tooltips on charts showing comprehensive information including indicator values
 - Technical indicator toggle controls for RSI, MACD, and TTM Squeeze with proper chart integration and smooth transitions
+- Dynamic 24-hour high/low display with clean formatting consistent with current price display styling
 - Enhanced price alert management section with full manual control and intuitive interface
 - Filterable table interface for top 50 cryptocurrencies with column-specific filters
 - Clean typography and modern styling

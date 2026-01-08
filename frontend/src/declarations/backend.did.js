@@ -16,6 +16,10 @@ export const PriceCache = IDL.Record({
   'timestamp' : IDL.Int,
   'price' : IDL.Float64,
 });
+export const PriceRange = IDL.Record({
+  'low' : IDL.Float64,
+  'high' : IDL.Float64,
+});
 export const TimeframeParams = IDL.Record({
   'timeframe' : IDL.Text,
   'intervalNanos' : IDL.Int,
@@ -50,6 +54,7 @@ export const TransformationOutput = IDL.Record({
 export const idlService = IDL.Service({
   'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
   'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
+  'getDailyHighLowFromCache' : IDL.Func([], [PriceRange], ['query']),
   'getHistoricalDataRange' : IDL.Func(
       [],
       [IDL.Record({ 'end' : IDL.Int, 'start' : IDL.Int })],
@@ -84,6 +89,7 @@ export const idlFactory = ({ IDL }) => {
     'timestamp' : IDL.Int,
     'price' : IDL.Float64,
   });
+  const PriceRange = IDL.Record({ 'low' : IDL.Float64, 'high' : IDL.Float64 });
   const TimeframeParams = IDL.Record({
     'timeframe' : IDL.Text,
     'intervalNanos' : IDL.Int,
@@ -115,6 +121,7 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
     'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
+    'getDailyHighLowFromCache' : IDL.Func([], [PriceRange], ['query']),
     'getHistoricalDataRange' : IDL.Func(
         [],
         [IDL.Record({ 'end' : IDL.Int, 'start' : IDL.Int })],

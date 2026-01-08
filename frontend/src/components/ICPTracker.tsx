@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useICPPrice, useICPHistoricalData, usePriceAlerts } from '@/hooks/useQueries';
+import { useICPPrice, useICPHistoricalData, usePriceAlerts, useDailyHighLow } from '@/hooks/useQueries';
 import { ICPPriceChart } from '@/components/ICPPriceChart';
 import { PortfolioCard } from '@/components/PortfolioCard';
 import { PriceAlertsCard } from '@/components/PriceAlertsCard';
@@ -15,6 +15,7 @@ export function ICPTracker() {
   const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
   const { data: historicalData } = useICPHistoricalData('1d');
   const { data: alerts } = usePriceAlerts();
+  const { data: dailyHighLow, isLoading: isHighLowLoading } = useDailyHighLow();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [notifiedAlerts, setNotifiedAlerts] = useState<Set<number>>(new Set());
 
@@ -22,14 +23,6 @@ export function ICPTracker() {
   const priceChange24h = historicalData && currentPrice && historicalData.length > 0
     ? ((currentPrice - historicalData[0].price) / historicalData[0].price) * 100
     : 0;
-
-  const high24h = historicalData && historicalData.length > 0
-    ? Math.max(...historicalData.map(d => d.price), currentPrice || 0)
-    : currentPrice || 0;
-
-  const low24h = historicalData && historicalData.length > 0
-    ? Math.min(...historicalData.map(d => d.price), currentPrice || 0)
-    : currentPrice || 0;
 
   // Check for triggered alerts
   useEffect(() => {
@@ -137,9 +130,19 @@ export function ICPTracker() {
                   ${currentPrice.toFixed(3)}
                 </div>
                 <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>24h High: ${high24h.toFixed(3)}</span>
-                  <span>•</span>
-                  <span>24h Low: ${low24h.toFixed(3)}</span>
+                  {isHighLowLoading ? (
+                    <>
+                      <Skeleton className="h-4 w-32" />
+                      <span>•</span>
+                      <Skeleton className="h-4 w-32" />
+                    </>
+                  ) : dailyHighLow ? (
+                    <>
+                      <span>24h High: ${dailyHighLow.high.toFixed(3)}</span>
+                      <span>•</span>
+                      <span>24h Low: ${dailyHighLow.low.toFixed(3)}</span>
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>

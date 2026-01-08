@@ -19,6 +19,7 @@ export interface PortfolioSummary {
 }
 export interface PriceAlertStatus { 'isTriggered' : boolean, 'price' : number }
 export interface PriceCache { 'timestamp' : bigint, 'price' : number }
+export interface PriceRange { 'low' : number, 'high' : number }
 export interface TimeframeParams {
   'timeframe' : string,
   'intervalNanos' : bigint,
@@ -42,6 +43,7 @@ export interface http_request_result {
 export interface _SERVICE {
   'getAlerts' : ActorMethod<[], Array<PriceAlertStatus>>,
   'getCachedPriceHistory' : ActorMethod<[], Array<PriceCache>>,
+  'getDailyHighLowFromCache' : ActorMethod<[], PriceRange>,
   'getHistoricalDataRange' : ActorMethod<
     [],
     { 'end' : bigint, 'start' : bigint }

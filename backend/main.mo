@@ -8,9 +8,7 @@ import OutCall "http-outcalls/outcall";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
   let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;
@@ -19,6 +17,11 @@ actor {
   type PriceAlertStatus = {
     price : Float;
     isTriggered : Bool;
+  };
+
+  public type PriceRange = {
+    low : Float;
+    high : Float;
   };
 
   type Coin = {
@@ -200,6 +203,35 @@ actor {
       };
     };
     { left; right; ratio };
+  };
+
+  func roundDownDay(timestamp : Int) : Int {
+    let dayInNanos : Int = 60 * 60 * 24 * 1_000_000_000;
+    dayInNanos * (timestamp / dayInNanos);
+  };
+
+  public query ({ caller }) func getDailyHighLowFromCache() : async PriceRange {
+    var high : Float = 0.0;
+    var low : Float = 0.0;
+
+    switch (icpPriceHistory.last()) {
+      case (?lastCacheEntry) {
+        high := lastCacheEntry.price;
+        low := lastCacheEntry.price;
+      };
+      case (null) {};
+    };
+
+    let today = roundDownDay(Time.now());
+
+    for (entry in icpPriceHistory.values()) {
+      if (roundDownDay(entry.timestamp) == today) {
+        if (entry.price > high) { high := entry.price };
+        if (entry.price < low) { low := entry.price };
+      };
+    };
+
+    { high; low };
   };
 
   public shared ({ caller }) func getHistoricalPriceHistory(params : TimeframeParams) : async [PriceCache] {
