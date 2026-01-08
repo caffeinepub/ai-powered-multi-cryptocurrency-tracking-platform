@@ -7,12 +7,18 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 
 ### ICP Live Price Tracker
 - Display a robust dynamic chart showing real-time ICP price changes with continuous updates and reliable data display
-- Implement comprehensive chart timeframe selection with the following options:
+- Implement comprehensive chart timeframe selection with enhanced UI controls:
   - Short-term intervals: 1-minute, 2-minute, 3-minute, 5-minute, 10-minute, 15-minute, 30-minute
   - Medium-term intervals: 1-hour, 2-hour, 4-hour, 6-hour
   - Long-term intervals: 1-day, 1-month, 1-quarter, 1-year
-- Implement enhanced chart data system with precise time-based intervals and accurate resampling:
+  - Enhanced timeframe selector UI with clear labeling and visual differentiation
+  - Hover tooltips for each timeframe describing data density and update frequency
+  - Visual feedback for the currently active timeframe with distinct styling
+  - Smooth navigation between timeframes with improved responsiveness
+- Implement enhanced chart data system with optimized data fetching and transitions:
   - Cache comprehensive price history data in backend with proper time-based indexing for all timeframes
+  - High-precision data fetching with minimal lag and consistent historical data alignment
+  - Dynamic resampling and smoothing logic for seamless transitions between distant timeframes
   - Automatically refresh and resample data based on selected timeframe with precise historical resolution matching
   - Ensure data refresh logic dynamically matches the selected interval with accurate nanosecond conversions for each timeframe
   - Backend resampling intervals must be precisely synchronized with frontend timeframe selections using proper nanosecond time calculations
@@ -22,20 +28,26 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Optimize high-frequency data caching for short intervals while maintaining performance
   - Synchronize chart data refresh and timeframe switching with backend caching for reliable rendering
   - Align backend caching and resampling mechanism to handle varying data densities across all timeframes
-  - Fix chart timeframe rendering to ensure each interval (1m, 2m, 3m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 6h, 1d, 1mo, 1q, 1y) displays accurate data using cached and live historical data
+  - Fix chart timeframe rendering to ensure each interval displays accurate data using cached and live historical data
   - Improve chart responsiveness with cross-timeframe synchronization and smooth visual transitions between intervals
+- Implement timeframe-specific loading and error states:
+  - Display loading indicators when switching between timeframes
+  - Show specific error messages when timeframe data is unavailable
+  - Provide clear user feedback during data refresh operations
+  - Graceful handling of temporary data unavailability for specific intervals
 - Implement interactive chart hover tooltips:
   - Display comprehensive details including precise date/time, price, and any active indicator values
   - Show formatted price values and readable time stamps
   - Include technical indicator values when indicators are enabled
   - Improve chart readability and user interaction
   - Ensure accurate hover tooltips across all timeframes
-- Implement technical indicator system with interactive controls:
+- Implement technical indicator system with enhanced timeframe compatibility:
   - Optional RSI (Relative Strength Index) indicator with toggle on/off functionality
   - Optional MACD (Moving Average Convergence Divergence) indicator with toggle on/off functionality
   - Optional TTM Squeeze indicator with toggle on/off functionality
   - Each indicator calculates and renders correctly based on the selected timeframe with enhanced handling of varying data densities
   - Interactive controls to enable/disable each indicator independently
+  - Seamless indicator overlay rendering when switching between timeframes
   - Proper indicator scaling and visualization on the chart with smooth transitions between timeframes
   - Refined indicator calculations to maintain valid results when switching between short and long intervals
   - Verify compatibility with existing indicators and ensure they remain accurate when switching timeframes
@@ -82,14 +94,30 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 ### Frontend
 - Clean, modern React user interface
 - Responsive design that works on desktop and mobile devices
-- Interactive price charts for ICP visualization with comprehensive timeframe selection
+- Interactive price charts for ICP visualization with enhanced timeframe selection controls
+- Enhanced timeframe selector UI with improved visual design:
+  - Clear labeling for all 15 timeframe options
+  - Hover tooltips describing data density and update frequency for each interval
+  - Visual feedback for active timeframe with distinct styling and smooth transitions
+  - Improved navigation between timeframes with better responsiveness
+- Optimized data-fetching logic in useQueries.ts:
+  - High-precision data fetching with minimal lag
+  - Consistent historical data alignment for each timeframe
+  - Dynamic resampling and smoothing for seamless transitions between distant timeframes
+  - Enhanced chart responsiveness and accuracy
+- Timeframe-specific loading and error states:
+  - Loading indicators when switching between timeframes
+  - Specific error messages for timeframe data unavailability
+  - Clear user feedback during data refresh operations
 - Enhanced charting logic to dynamically load and update historical price data for each timeframe with improved responsiveness
 - Precise automatic chart refresh and data resampling matching selected timeframe intervals
 - Seamless transitions between different chart timeframes with consistent data updates and reduced load times
 - Enhanced fallback data display with proper time-based intervals
 - Interactive hover tooltips on charts showing comprehensive data including date/time, price, and indicator values
-- Technical indicator controls with toggle functionality for RSI, MACD, and TTM Squeeze
-- Proper indicator calculation and rendering based on selected timeframe with refined handling of varying data densities
+- Technical indicator controls with enhanced timeframe compatibility:
+  - Toggle functionality for RSI, MACD, and TTM Squeeze
+  - Seamless indicator overlay rendering when switching between timeframes
+  - Proper indicator calculation and rendering based on selected timeframe with refined handling of varying data densities
 - Robust synchronization layer using enhanced useQueries hook to prefetch and cache data for multiple timeframes
 - Dynamic 24-hour high/low calculation and display:
   - Track and calculate current day's high and low prices from live price data
@@ -127,8 +155,10 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Toggle alert status (triggered, pending, inactive)
   - Provide comprehensive endpoints for alert CRUD operations
   - Implement `toggleAlertStatus` and `getAlerts` functions for frontend integration
-- Implement optimized price data caching and fallback system with improved synchronization:
+- Implement optimized price data caching and fallback system with enhanced timeframe support:
   - Cache comprehensive ICP price history data with proper time-based indexing for all timeframes
+  - Enhanced data precision and alignment for seamless timeframe transitions
+  - Optimized resampling algorithms for smooth data transitions between distant timeframes
   - Maintain high-frequency data points for short intervals (1-minute through 6-hour) with performance optimization
   - Provide reliable fallback data when external APIs fail
   - Ensure chart consistency by maintaining recent price entries with accurate historical resolution
@@ -142,19 +172,19 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Provide endpoint to retrieve current 24-hour high/low values
   - Update high/low calculations as new price data is received
   - Ensure accurate 24-hour timeframe calculations based on current time
-- Calculate technical indicators for chart display:
+- Calculate technical indicators for chart display with enhanced timeframe compatibility:
   - RSI calculation based on selected timeframe data with enhanced handling of varying data densities
   - MACD calculation with proper signal and histogram values across different timeframes
   - TTM Squeeze calculation with appropriate squeeze detection for all intervals
   - Provide indicator data endpoints that match the selected chart timeframe with smooth transitions
-  - Ensure indicator accuracy when switching between timeframes
+  - Ensure indicator accuracy and proper scaling when switching between timeframes
 - Fetch live ICP price data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd`)
 - Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
 - Provide endpoints for:
   - Current ICP price and comprehensive historical data with precise time-based intervals
   - Current 24-hour high and low prices
-  - Chart data for all supported timeframes with accurate resampling and fallback support
+  - Chart data for all supported timeframes with enhanced resampling and fallback support
   - Technical indicator data (RSI, MACD, TTM Squeeze) calculated for the selected timeframe with enhanced data density handling
   - Top 50 cryptocurrencies market data
   - Investment portfolio calculations with real-time profit/loss metrics
@@ -171,6 +201,7 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Backend tracks and calculates 24-hour high/low prices from cached price data
 - Backend fetches real-time price data from CoinGecko API via HTTP outcalls
 - Comprehensive historical price data for all chart timeframes with cached fallbacks and precise resolution matching using accurate nanosecond conversions
+- Enhanced data precision and resampling algorithms for smooth timeframe transitions
 - Clean data transformation from external API responses to frontend-consumable format
 - Proper maintenance of high-frequency price history for accurate short-interval charts with enhanced data consistency
 - Technical indicator calculations stored and served based on timeframe requirements with refined handling of varying data densities
@@ -179,9 +210,11 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 ## User Interface
 - Two main sections: ICP tracker and top 50 dashboard
 - Navigation between different views
-- Responsive charts with comprehensive timeframe selection and reliable data display with improved load times
+- Responsive charts with enhanced timeframe selection controls and reliable data display with improved load times
+- Enhanced timeframe selector UI with clear labeling, hover tooltips, and visual feedback for active timeframe
+- Timeframe-specific loading and error states with clear user feedback
 - Interactive hover tooltips on charts showing comprehensive information including indicator values
-- Technical indicator toggle controls for RSI, MACD, and TTM Squeeze with proper chart integration and smooth transitions
+- Technical indicator toggle controls for RSI, MACD, and TTM Squeeze with seamless timeframe compatibility
 - Dynamic 24-hour high/low display with clean formatting consistent with current price display styling
 - Enhanced price alert management section with full manual control and intuitive interface
 - Filterable table interface for top 50 cryptocurrencies with column-specific filters

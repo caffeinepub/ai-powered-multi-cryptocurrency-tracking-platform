@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useICPHistoricalData, usePriceAlerts, usePrefetchTimeframes, type TimeframeOption } from '@/hooks/useQueries';
 import {
   ComposedChart,
@@ -15,14 +16,14 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
   ReferenceLine,
   TooltipProps,
   Legend,
 } from 'recharts';
 import { format } from 'date-fns';
-import { Info, RefreshCw, TrendingUp } from 'lucide-react';
+import { Info, RefreshCw, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import {
   calculateRSI,
   calculateMACD,
@@ -33,22 +34,29 @@ import {
   type TTMSqueezeData,
 } from '@/lib/indicators';
 
-const TIMEFRAME_OPTIONS: { value: TimeframeOption; label: string }[] = [
-  { value: '1m', label: '1m' },
-  { value: '2m', label: '2m' },
-  { value: '3m', label: '3m' },
-  { value: '5m', label: '5m' },
-  { value: '10m', label: '10m' },
-  { value: '15m', label: '15m' },
-  { value: '30m', label: '30m' },
-  { value: '1h', label: '1h' },
-  { value: '2h', label: '2h' },
-  { value: '4h', label: '4h' },
-  { value: '6h', label: '6h' },
-  { value: '1d', label: '1d' },
-  { value: '1M', label: '1M' },
-  { value: '3M', label: '3M' },
-  { value: '1y', label: '1y' },
+interface TimeframeConfig {
+  value: TimeframeOption;
+  label: string;
+  description: string;
+  updateFrequency: string;
+}
+
+const TIMEFRAME_OPTIONS: TimeframeConfig[] = [
+  { value: '1m', label: '1m', description: 'High-frequency data, updates every minute', updateFrequency: '~1440 points/day' },
+  { value: '2m', label: '2m', description: 'High-frequency data, updates every 2 minutes', updateFrequency: '~720 points/day' },
+  { value: '3m', label: '3m', description: 'High-frequency data, updates every 3 minutes', updateFrequency: '~480 points/day' },
+  { value: '5m', label: '5m', description: 'High-frequency data, updates every 5 minutes', updateFrequency: '~288 points/day' },
+  { value: '10m', label: '10m', description: 'Medium-frequency data, updates every 10 minutes', updateFrequency: '~144 points/day' },
+  { value: '15m', label: '15m', description: 'Medium-frequency data, updates every 15 minutes', updateFrequency: '~96 points/day' },
+  { value: '30m', label: '30m', description: 'Medium-frequency data, updates every 30 minutes', updateFrequency: '~48 points/day' },
+  { value: '1h', label: '1h', description: 'Hourly data, updates every hour', updateFrequency: '~168 points/week' },
+  { value: '2h', label: '2h', description: 'Hourly data, updates every 2 hours', updateFrequency: '~84 points/week' },
+  { value: '4h', label: '4h', description: 'Hourly data, updates every 4 hours', updateFrequency: '~180 points/month' },
+  { value: '6h', label: '6h', description: 'Hourly data, updates every 6 hours', updateFrequency: '~120 points/month' },
+  { value: '1d', label: '1d', description: 'Daily data, updates once per day', updateFrequency: '~90 points/quarter' },
+  { value: '1M', label: '1M', description: 'Monthly data, updates once per month', updateFrequency: '~30 points' },
+  { value: '3M', label: '3M', description: 'Quarterly data, updates every 3 months', updateFrequency: '~90 points' },
+  { value: '1y', label: '1y', description: 'Yearly data, updates once per year', updateFrequency: '~365 points' },
 ];
 
 type IndicatorType = 'none' | 'rsi' | 'macd' | 'ttm';
@@ -126,10 +134,10 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
 
 export function ICPPriceChart() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('1d');
-  const [selectedIndicator, setSelectedIndicator] = useState<IndicatorType>('none');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
   const [showTTM, setShowTTM] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { data: historicalData, isLoading, error, refetch, isFetching } = useICPHistoricalData(selectedTimeframe);
   const { data: alerts } = usePriceAlerts();
@@ -146,6 +154,10 @@ export function ICPPriceChart() {
     if (currentIndex < TIMEFRAME_OPTIONS.length - 1) {
       prefetchTimeframe(TIMEFRAME_OPTIONS[currentIndex + 1].value);
     }
+    
+    // Also prefetch commonly used timeframes
+    if (selectedTimeframe !== '1h') prefetchTimeframe('1h');
+    if (selectedTimeframe !== '1d') prefetchTimeframe('1d');
   }, [selectedTimeframe, prefetchTimeframe]);
 
   // Calculate indicators based on historical data with adaptive period handling
@@ -213,8 +225,16 @@ export function ICPPriceChart() {
     return data;
   }, [historicalData, showRSI, showMACD, showTTM]);
 
-  const handleTimeframeChange = (timeframe: TimeframeOption) => {
+  const handleTimeframeChange = async (timeframe: TimeframeOption) => {
+    if (timeframe === selectedTimeframe) return;
+    
+    setIsTransitioning(true);
     setSelectedTimeframe(timeframe);
+    
+    // Reset transition state after a short delay
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
   };
 
   if (isLoading) {
@@ -225,7 +245,10 @@ export function ICPPriceChart() {
           <CardDescription>Historical price data with customizable timeframes and indicators</CardDescription>
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-[500px] w-full" />
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-[500px] w-full" />
+          </div>
         </CardContent>
       </Card>
     );
@@ -240,7 +263,7 @@ export function ICPPriceChart() {
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <Info className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>Unable to load chart data. Please try again.</span>
               <Button variant="outline" size="sm" onClick={() => refetch()} className="ml-4">
@@ -299,17 +322,28 @@ export function ICPPriceChart() {
   const mainChartHeight = hasIndicators ? 300 : 400;
   const indicatorHeight = 150;
 
+  // Get current timeframe config
+  const currentConfig = TIMEFRAME_OPTIONS.find(opt => opt.value === selectedTimeframe);
+
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between">
             <div>
-              <CardTitle>ICP Price Chart</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                ICP Price Chart
+                {isTransitioning && (
+                  <Badge variant="outline" className="border-blue-500 text-blue-500">
+                    <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+                    Loading
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>Historical price data with customizable timeframes and indicators</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              {isFetching && (
+              {isFetching && !isTransitioning && (
                 <Badge variant="outline" className="border-blue-500 text-blue-500">
                   <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
                   Updating
@@ -324,51 +358,120 @@ export function ICPPriceChart() {
             </div>
           </div>
 
-          {/* Timeframe Selector */}
-          <div className="flex flex-wrap gap-1">
-            {TIMEFRAME_OPTIONS.map((option) => (
-              <Button
-                key={option.value}
-                variant={selectedTimeframe === option.value ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleTimeframeChange(option.value)}
-                className="h-8 px-3 text-xs"
-                disabled={isFetching}
-              >
-                {option.label}
-              </Button>
-            ))}
+          {/* Enhanced Timeframe Selector with Tooltips */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span className="font-medium">Timeframe:</span>
+              {currentConfig && (
+                <span className="text-xs">
+                  {currentConfig.description} • {currentConfig.updateFrequency}
+                </span>
+              )}
+            </div>
+            <TooltipProvider delayDuration={200}>
+              <div className="flex flex-wrap gap-1.5">
+                {TIMEFRAME_OPTIONS.map((option) => (
+                  <Tooltip key={option.value}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={selectedTimeframe === option.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleTimeframeChange(option.value)}
+                        className={`h-9 px-3 text-xs font-medium transition-all ${
+                          selectedTimeframe === option.value
+                            ? 'shadow-md ring-2 ring-primary/20'
+                            : 'hover:border-primary/50'
+                        }`}
+                        disabled={isFetching || isTransitioning}
+                      >
+                        {option.label}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <div className="space-y-1">
+                        <p className="font-semibold">{option.label} Interval</p>
+                        <p className="text-xs text-muted-foreground">{option.description}</p>
+                        <p className="text-xs text-muted-foreground">Data density: {option.updateFrequency}</p>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </TooltipProvider>
           </div>
 
           {/* Indicator Toggles */}
           <div className="flex flex-wrap items-center gap-4 rounded-lg border bg-muted/50 p-3">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Indicators:</span>
+              <span className="text-sm font-medium">Technical Indicators:</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="rsi-toggle" checked={showRSI} onCheckedChange={setShowRSI} disabled={isFetching} />
-              <Label htmlFor="rsi-toggle" className="cursor-pointer text-sm">
-                RSI
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="macd-toggle" checked={showMACD} onCheckedChange={setShowMACD} disabled={isFetching} />
-              <Label htmlFor="macd-toggle" className="cursor-pointer text-sm">
-                MACD
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch id="ttm-toggle" checked={showTTM} onCheckedChange={setShowTTM} disabled={isFetching} />
-              <Label htmlFor="ttm-toggle" className="cursor-pointer text-sm">
-                TTM Squeeze
-              </Label>
-            </div>
+            <TooltipProvider delayDuration={200}>
+              <div className="flex flex-wrap items-center gap-4">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="rsi-toggle"
+                        checked={showRSI}
+                        onCheckedChange={setShowRSI}
+                        disabled={isFetching || isTransitioning}
+                      />
+                      <Label htmlFor="rsi-toggle" className="cursor-pointer text-sm font-medium">
+                        RSI
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Relative Strength Index - Momentum oscillator (0-100)</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="macd-toggle"
+                        checked={showMACD}
+                        onCheckedChange={setShowMACD}
+                        disabled={isFetching || isTransitioning}
+                      />
+                      <Label htmlFor="macd-toggle" className="cursor-pointer text-sm font-medium">
+                        MACD
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Moving Average Convergence Divergence - Trend indicator</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="ttm-toggle"
+                        checked={showTTM}
+                        onCheckedChange={setShowTTM}
+                        disabled={isFetching || isTransitioning}
+                      />
+                      <Label htmlFor="ttm-toggle" className="cursor-pointer text-sm font-medium">
+                        TTM Squeeze
+                      </Label>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">TTM Squeeze - Volatility and momentum indicator</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className={`space-y-4 transition-opacity duration-300 ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
           {/* Main Price Chart */}
           <ResponsiveContainer width="100%" height={mainChartHeight}>
             <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -380,7 +483,7 @@ export function ICPPriceChart() {
                 tickFormatter={(value) => `$${value.toFixed(2)}`}
                 className="text-xs"
               />
-              <Tooltip content={<CustomTooltip />} />
+              <RechartsTooltip content={<CustomTooltip />} />
               <Legend />
               {alerts?.map((alert) => (
                 <ReferenceLine
@@ -417,7 +520,7 @@ export function ICPPriceChart() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} className="text-xs" minTickGap={50} />
                 <YAxis domain={[0, 100]} className="text-xs" />
-                <Tooltip content={<CustomTooltip />} />
+                <RechartsTooltip content={<CustomTooltip />} />
                 <ReferenceLine y={70} stroke="hsl(var(--destructive))" strokeDasharray="3 3" label="Overbought" />
                 <ReferenceLine y={30} stroke="hsl(142 76% 36%)" strokeDasharray="3 3" label="Oversold" />
                 <Line
@@ -439,7 +542,7 @@ export function ICPPriceChart() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} className="text-xs" minTickGap={50} />
                 <YAxis className="text-xs" />
-                <Tooltip content={<CustomTooltip />} />
+                <RechartsTooltip content={<CustomTooltip />} />
                 <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
                 <Bar dataKey="macdHistogram" fill="hsl(220 70% 50%)" opacity={0.6} name="Histogram" />
                 <Line type="monotone" dataKey="macd" stroke="hsl(220 100% 60%)" strokeWidth={2} dot={false} name="MACD" />
@@ -462,7 +565,7 @@ export function ICPPriceChart() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} className="text-xs" minTickGap={50} />
                 <YAxis className="text-xs" />
-                <Tooltip content={<CustomTooltip />} />
+                <RechartsTooltip content={<CustomTooltip />} />
                 <ReferenceLine y={0} stroke="hsl(var(--muted-foreground))" />
                 <Bar
                   dataKey="ttmValue"

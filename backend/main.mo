@@ -8,7 +8,9 @@ import OutCall "http-outcalls/outcall";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
   let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;

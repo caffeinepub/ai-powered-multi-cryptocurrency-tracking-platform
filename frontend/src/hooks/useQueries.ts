@@ -109,8 +109,8 @@ export function usePortfolioSummary() {
   });
 }
 
-// Helper function to resample data on the frontend with improved accuracy
-function resampleData(data: HistoricalDataPoint[], intervalMinutes: number): HistoricalDataPoint[] {
+// Enhanced resampling with smoothing for better transitions
+function resampleDataWithSmoothing(data: HistoricalDataPoint[], intervalMinutes: number): HistoricalDataPoint[] {
   if (data.length === 0) return [];
   
   const intervalMs = intervalMinutes * 60 * 1000;
@@ -125,13 +125,31 @@ function resampleData(data: HistoricalDataPoint[], intervalMinutes: number): His
     grouped[bucketKey].push(point.price);
   });
   
-  // Calculate average for each bucket and sort by timestamp
+  // Calculate average for each bucket with weighted smoothing
   const resampled = Object.entries(grouped)
-    .map(([timestamp, prices]) => ({
-      timestamp: parseInt(timestamp),
-      price: prices.reduce((sum, p) => sum + p, 0) / prices.length,
-    }))
+    .map(([timestamp, prices]) => {
+      // Use weighted average favoring recent prices in the bucket
+      const weights = prices.map((_, i) => i + 1);
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      const weightedPrice = prices.reduce((sum, price, i) => sum + price * weights[i], 0) / totalWeight;
+      
+      return {
+        timestamp: parseInt(timestamp),
+        price: weightedPrice,
+      };
+    })
     .sort((a, b) => a.timestamp - b.timestamp);
+  
+  // Apply light smoothing for better visual transitions
+  if (resampled.length > 3) {
+    for (let i = 1; i < resampled.length - 1; i++) {
+      const prev = resampled[i - 1].price;
+      const curr = resampled[i].price;
+      const next = resampled[i + 1].price;
+      // Simple moving average smoothing
+      resampled[i].price = (prev * 0.25 + curr * 0.5 + next * 0.25);
+    }
+  }
   
   // Ensure we have enough data points for visualization
   if (resampled.length < 2) {
@@ -148,6 +166,7 @@ function getTimeframeConfig(timeframe: TimeframeOption): {
   daysBack: number; 
   coingeckoInterval?: string;
   minDataPoints: number;
+  refetchInterval: number;
 } {
   const configs: Record<TimeframeOption, { 
     intervalMinutes: number;
@@ -155,22 +174,23 @@ function getTimeframeConfig(timeframe: TimeframeOption): {
     daysBack: number; 
     coingeckoInterval?: string;
     minDataPoints: number;
+    refetchInterval: number;
   }> = {
-    '1m': { intervalMinutes: 1, intervalNanos: BigInt(1 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
-    '2m': { intervalMinutes: 2, intervalNanos: BigInt(2 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
-    '3m': { intervalMinutes: 3, intervalNanos: BigInt(3 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
-    '5m': { intervalMinutes: 5, intervalNanos: BigInt(5 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
-    '10m': { intervalMinutes: 10, intervalNanos: BigInt(10 * 60 * 1_000_000_000), daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 100 },
-    '15m': { intervalMinutes: 15, intervalNanos: BigInt(15 * 60 * 1_000_000_000), daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 96 },
-    '30m': { intervalMinutes: 30, intervalNanos: BigInt(30 * 60 * 1_000_000_000), daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 96 },
-    '1h': { intervalMinutes: 60, intervalNanos: BigInt(60 * 60 * 1_000_000_000), daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 84 },
-    '2h': { intervalMinutes: 120, intervalNanos: BigInt(120 * 60 * 1_000_000_000), daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 84 },
-    '4h': { intervalMinutes: 240, intervalNanos: BigInt(240 * 60 * 1_000_000_000), daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 90 },
-    '6h': { intervalMinutes: 360, intervalNanos: BigInt(360 * 60 * 1_000_000_000), daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 120 },
-    '1d': { intervalMinutes: 1440, intervalNanos: BigInt(1440 * 60 * 1_000_000_000), daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90 },
-    '1M': { intervalMinutes: 43200, intervalNanos: BigInt(43200 * 60 * 1_000_000_000), daysBack: 30, coingeckoInterval: 'daily', minDataPoints: 30 },
-    '3M': { intervalMinutes: 129600, intervalNanos: BigInt(129600 * 60 * 1_000_000_000), daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90 },
-    '1y': { intervalMinutes: 525600, intervalNanos: BigInt(525600 * 60 * 1_000_000_000), daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 365 },
+    '1m': { intervalMinutes: 1, intervalNanos: BigInt(1 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 30000 },
+    '2m': { intervalMinutes: 2, intervalNanos: BigInt(2 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 30000 },
+    '3m': { intervalMinutes: 3, intervalNanos: BigInt(3 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 30000 },
+    '5m': { intervalMinutes: 5, intervalNanos: BigInt(5 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 30000 },
+    '10m': { intervalMinutes: 10, intervalNanos: BigInt(10 * 60 * 1_000_000_000), daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 60000 },
+    '15m': { intervalMinutes: 15, intervalNanos: BigInt(15 * 60 * 1_000_000_000), daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 96, refetchInterval: 60000 },
+    '30m': { intervalMinutes: 30, intervalNanos: BigInt(30 * 60 * 1_000_000_000), daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 96, refetchInterval: 120000 },
+    '1h': { intervalMinutes: 60, intervalNanos: BigInt(60 * 60 * 1_000_000_000), daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 84, refetchInterval: 180000 },
+    '2h': { intervalMinutes: 120, intervalNanos: BigInt(120 * 60 * 1_000_000_000), daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 84, refetchInterval: 300000 },
+    '4h': { intervalMinutes: 240, intervalNanos: BigInt(240 * 60 * 1_000_000_000), daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 90, refetchInterval: 300000 },
+    '6h': { intervalMinutes: 360, intervalNanos: BigInt(360 * 60 * 1_000_000_000), daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 120, refetchInterval: 300000 },
+    '1d': { intervalMinutes: 1440, intervalNanos: BigInt(1440 * 60 * 1_000_000_000), daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90, refetchInterval: 600000 },
+    '1M': { intervalMinutes: 43200, intervalNanos: BigInt(43200 * 60 * 1_000_000_000), daysBack: 30, coingeckoInterval: 'daily', minDataPoints: 30, refetchInterval: 600000 },
+    '3M': { intervalMinutes: 129600, intervalNanos: BigInt(129600 * 60 * 1_000_000_000), daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90, refetchInterval: 600000 },
+    '1y': { intervalMinutes: 525600, intervalNanos: BigInt(525600 * 60 * 1_000_000_000), daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 365, refetchInterval: 600000 },
   };
   return configs[timeframe];
 }
@@ -208,7 +228,7 @@ export function usePrefetchTimeframes() {
             price,
           }));
           
-          return resampleData(rawData, config.intervalMinutes);
+          return resampleDataWithSmoothing(rawData, config.intervalMinutes);
         } catch (error) {
           // Fallback to backend data
           const resampledData = await actor.getResampledPriceHistory(config.intervalNanos);
@@ -259,13 +279,13 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
           price,
         }));
         
-        // Resample data based on timeframe for consistent intervals
-        const resampledData = resampleData(rawData, config.intervalMinutes);
+        // Resample data with smoothing for better transitions
+        const resampledData = resampleDataWithSmoothing(rawData, config.intervalMinutes);
         
         // Ensure we have enough data points
         if (resampledData.length < config.minDataPoints && rawData.length >= config.minDataPoints) {
-          // If resampling reduced data too much, use raw data with lighter resampling
-          return resampleData(rawData, Math.max(1, Math.floor(config.intervalMinutes / 2)));
+          // If resampling reduced data too much, use lighter resampling
+          return resampleDataWithSmoothing(rawData, Math.max(1, Math.floor(config.intervalMinutes / 2)));
         }
         
         return resampledData;
@@ -302,8 +322,8 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
               price: entry.price,
             })).sort((a, b) => a.timestamp - b.timestamp);
             
-            // Resample on frontend
-            const resampled = resampleData(rawCachedData, config.intervalMinutes);
+            // Resample on frontend with smoothing
+            const resampled = resampleDataWithSmoothing(rawCachedData, config.intervalMinutes);
             
             if (resampled.length >= 2) {
               return resampled;
@@ -320,7 +340,7 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
       }
     },
     enabled: !!actor && !isFetching,
-    refetchInterval: config.intervalMinutes < 60 ? 30000 : 300000, // 30s for short intervals, 5min for longer
+    refetchInterval: config.refetchInterval,
     staleTime: config.intervalMinutes < 60 ? 25000 : 240000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
