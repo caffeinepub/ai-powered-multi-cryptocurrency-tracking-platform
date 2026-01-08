@@ -89,18 +89,39 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
 export interface PriceAlertStatus {
     isTriggered: boolean;
     price: number;
 }
-export interface PortfolioSummary {
+export interface ICPPortfolio {
     coins: number;
     avgCost: number;
 }
+export interface TransformationOutput {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
+export interface http_header {
+    value: string;
+    name: string;
+}
+export interface http_request_result {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
 export interface backendInterface {
     getAlerts(): Promise<Array<PriceAlertStatus>>;
-    getPortfolioSummary(): Promise<PortfolioSummary>;
+    getICPLivePrice(): Promise<string>;
+    getPortfolioSummary(): Promise<ICPPortfolio>;
+    getTopCryptos(): Promise<string>;
     toggleAlertStatus(price: number): Promise<void>;
+    transform(input: TransformationInput): Promise<TransformationOutput>;
 }
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
@@ -118,7 +139,21 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getPortfolioSummary(): Promise<PortfolioSummary> {
+    async getICPLivePrice(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getICPLivePrice();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getICPLivePrice();
+            return result;
+        }
+    }
+    async getPortfolioSummary(): Promise<ICPPortfolio> {
         if (this.processError) {
             try {
                 const result = await this.actor.getPortfolioSummary();
@@ -129,6 +164,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getPortfolioSummary();
+            return result;
+        }
+    }
+    async getTopCryptos(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTopCryptos();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTopCryptos();
             return result;
         }
     }
@@ -143,6 +192,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.toggleAlertStatus(arg0);
+            return result;
+        }
+    }
+    async transform(arg0: TransformationInput): Promise<TransformationOutput> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.transform(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.transform(arg0);
             return result;
         }
     }

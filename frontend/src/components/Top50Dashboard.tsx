@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useTop50Cryptocurrencies } from '@/hooks/useQueries';
@@ -13,10 +14,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Search, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Search, AlertCircle, RefreshCw } from 'lucide-react';
 
 export function Top50Dashboard() {
-  const { data: cryptos, isLoading, error } = useTop50Cryptocurrencies();
+  const { data: cryptos, isLoading, error, refetch } = useTop50Cryptocurrencies();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredCryptos = cryptos?.filter(
@@ -34,8 +35,17 @@ export function Top50Dashboard() {
         </div>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load cryptocurrency data. Please check your internet connection and try again.
+          <AlertDescription className="flex items-center justify-between">
+            <span>Data temporarily unavailable. Please try again.</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="ml-4"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Retry
+            </Button>
           </AlertDescription>
         </Alert>
       </section>

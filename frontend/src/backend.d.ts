@@ -7,16 +7,37 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
 export interface PriceAlertStatus {
     isTriggered: boolean;
     price: number;
 }
-export interface PortfolioSummary {
+export interface ICPPortfolio {
     coins: number;
     avgCost: number;
 }
+export interface TransformationOutput {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
+export interface http_header {
+    value: string;
+    name: string;
+}
+export interface http_request_result {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
 export interface backendInterface {
     getAlerts(): Promise<Array<PriceAlertStatus>>;
-    getPortfolioSummary(): Promise<PortfolioSummary>;
+    getICPLivePrice(): Promise<string>;
+    getPortfolioSummary(): Promise<ICPPortfolio>;
+    getTopCryptos(): Promise<string>;
     toggleAlertStatus(price: number): Promise<void>;
+    transform(input: TransformationInput): Promise<TransformationOutput>;
 }

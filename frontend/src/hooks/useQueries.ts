@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { PortfolioSummary, PriceAlertStatus } from '@/backend';
+import type { ICPPortfolio, PriceAlertStatus } from '@/backend';
 
 // CoinGecko API types
 interface CoinGeckoPrice {
@@ -36,22 +36,29 @@ interface HistoricalDataPoint {
   price: number;
 }
 
-// Fetch ICP current price from CoinGecko
+interface ICPPriceResponse {
+  'internet-computer': {
+    usd: number;
+  };
+}
+
+// Fetch ICP current price from backend
 export function useICPPrice() {
-  return useQuery<CoinGeckoPrice>({
+  const { actor, isFetching } = useActor();
+
+  return useQuery<number>({
     queryKey: ['icp-price'],
     queryFn: async () => {
-      const response = await fetch(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=internet-computer&order=market_cap_desc&sparkline=false&price_change_percentage=24h'
-      );
-      if (!response.ok) {
-        throw new Error('Failed to fetch ICP price');
-      }
-      const data = await response.json();
-      return data[0];
+      if (!actor) throw new Error('Actor not initialized');
+      const response = await actor.getICPLivePrice();
+      const data: ICPPriceResponse = JSON.parse(response);
+      return data['internet-computer'].usd;
     },
+    enabled: !!actor && !isFetching,
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 25000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
@@ -74,24 +81,27 @@ export function useICPHistoricalData() {
     },
     refetchInterval: 300000, // Refetch every 5 minutes
     staleTime: 240000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
-// Fetch top 50 cryptocurrencies
+// Fetch top 50 cryptocurrencies from backend
 export function useTop50Cryptocurrencies() {
+  const { actor, isFetching } = useActor();
+
   return useQuery<CoinGeckoPrice[]>({
     queryKey: ['top-50-cryptos'],
     queryFn: async () => {
-      const response = await fetch(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false&price_change_percentage=24h'
-      );
-      if (!response.ok) {
-        throw new Error('Failed to fetch top 50 cryptocurrencies');
-      }
-      return response.json();
+      if (!actor) throw new Error('Actor not initialized');
+      const response = await actor.getTopCryptos();
+      return JSON.parse(response);
     },
+    enabled: !!actor && !isFetching,
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 25000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
@@ -99,7 +109,7 @@ export function useTop50Cryptocurrencies() {
 export function usePortfolioSummary() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<PortfolioSummary>({
+  return useQuery<ICPPortfolio>({
     queryKey: ['portfolio-summary'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not initialized');
