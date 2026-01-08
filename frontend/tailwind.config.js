@@ -73,7 +73,10 @@ export default {
                 sm: 'calc(var(--radius) - 4px)'
             },
             boxShadow: {
-                xs: '0 1px 2px 0 rgba(0,0,0,0.05)'
+                xs: '0 1px 2px 0 rgba(0,0,0,0.05)',
+                'glow-sm': '0 0 10px rgba(var(--primary), 0.3)',
+                'glow-md': '0 0 20px rgba(var(--primary), 0.4)',
+                'glow-lg': '0 0 30px rgba(var(--primary), 0.5)',
             },
             keyframes: {
                 'accordion-down': {
@@ -83,11 +86,39 @@ export default {
                 'accordion-up': {
                     from: { height: 'var(--radix-accordion-content-height)' },
                     to: { height: '0' }
+                },
+                'fade-in': {
+                    from: { opacity: '0', transform: 'translateY(20px)' },
+                    to: { opacity: '1', transform: 'translateY(0)' }
+                },
+                'scale-in': {
+                    from: { opacity: '0', transform: 'scale(0.95)' },
+                    to: { opacity: '1', transform: 'scale(1)' }
+                },
+                'slide-in-right': {
+                    from: { transform: 'translateX(100%)' },
+                    to: { transform: 'translateX(0)' }
+                },
+                'slide-in-left': {
+                    from: { transform: 'translateX(-100%)' },
+                    to: { transform: 'translateX(0)' }
+                },
+                shimmer: {
+                    '0%': { backgroundPosition: '-1000px 0' },
+                    '100%': { backgroundPosition: '1000px 0' }
                 }
             },
             animation: {
                 'accordion-down': 'accordion-down 0.2s ease-out',
-                'accordion-up': 'accordion-up 0.2s ease-out'
+                'accordion-up': 'accordion-up 0.2s ease-out',
+                'fade-in': 'fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                'scale-in': 'scale-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                'slide-in-right': 'slide-in-right 0.3s ease-out',
+                'slide-in-left': 'slide-in-left 0.3s ease-out',
+                shimmer: 'shimmer 2s infinite'
+            },
+            transitionTimingFunction: {
+                'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
             }
         }
     },
