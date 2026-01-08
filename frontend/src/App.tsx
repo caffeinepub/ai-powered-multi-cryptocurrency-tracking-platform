@@ -4,14 +4,22 @@ import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { ICPTracker } from '@/components/ICPTracker';
-import { Top50Dashboard } from '@/components/Top50Dashboard';
+import { Top100Dashboard } from '@/components/Top100Dashboard';
 import { PortfolioSimulator } from '@/components/PortfolioSimulator';
 import { InvestmentRecommendations } from '@/components/InvestmentRecommendations';
 import { InvestmentPlanner } from '@/components/InvestmentPlanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, BarChart3, Target, Lightbulb, LineChart } from 'lucide-react';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 2,
+      staleTime: 25000,
+    },
+  },
+});
 
 function App() {
   return (
@@ -45,8 +53,8 @@ function App() {
                   </TabsTrigger>
                   <TabsTrigger value="market" className="gap-2">
                     <BarChart3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Top 50</span>
-                    <span className="sm:hidden">Top 50</span>
+                    <span className="hidden sm:inline">Top 100</span>
+                    <span className="sm:hidden">Top 100</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -67,7 +75,7 @@ function App() {
                 </TabsContent>
 
                 <TabsContent value="market" className="space-y-12">
-                  <Top50Dashboard />
+                  <Top100Dashboard />
                 </TabsContent>
               </Tabs>
             </div>

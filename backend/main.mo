@@ -10,8 +10,8 @@ import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import Principal "mo:core/Principal";
-import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import MixinAuthorization "authorization/MixinAuthorization";
 import Migration "migration";
 
 (with migration = Migration.run)
@@ -61,8 +61,8 @@ actor {
     profitLossPercent : Float;
   };
 
-  // Alert system
-  let alerts : Alerts = Map.empty<Float, Bool>();
+  // Alert system - per user
+  let userAlerts = Map.empty<Principal, Alerts>();
   let icpPriceHistory = List.empty<PriceCache>();
 
   // Indicator types
@@ -92,10 +92,22 @@ actor {
     await OutCall.httpGetRequest(url, [], transform);
   };
 
+  func getUserAlerts(user : Principal) : Alerts {
+    switch (userAlerts.get(user)) {
+      case (?alerts) { alerts };
+      case (null) {
+        let newAlerts = Map.empty<Float, Bool>();
+        userAlerts.add(user, newAlerts);
+        newAlerts;
+      };
+    };
+  };
+
   public query ({ caller }) func getAlerts() : async [(Float, Bool)] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access alerts");
     };
+    let alerts = getUserAlerts(caller);
     alerts.toArray();
   };
 
@@ -103,6 +115,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create price alerts");
     };
+    let alerts = getUserAlerts(caller);
     alerts.add(price, false);
   };
 
@@ -110,6 +123,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can delete price alerts");
     };
+    let alerts = getUserAlerts(caller);
     if (alerts.containsKey(price)) {
       alerts.remove(price);
       ();
@@ -122,6 +136,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can toggle alert status");
     };
+    let alerts = getUserAlerts(caller);
     let currentStatus = switch (alerts.get(price)) {
       case (?status) { not status };
       case (null) { true };
@@ -139,8 +154,8 @@ actor {
   };
 
   public shared ({ caller }) func recordNewICPPrice(price : Float) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can record prices");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can record prices");
     };
     let newEntry = {
       price;
@@ -442,7 +457,7 @@ actor {
     };
   };
 
-  // Top cryptos functions - public market data, no auth required
+  // Top cryptos functions - public market data, no auth required for reading
   let cachedTopCryptos = List.empty<Coin>();
 
   func trimCacheToMaxDays(days : Nat) : () {
@@ -454,13 +469,13 @@ actor {
   };
 
   public query ({ caller }) func getCachedTopCryptos() : async [Coin] {
-    // Public market data - no authorization required
+    // Public market data - no authorization required for reading
     cachedTopCryptos.toArray();
   };
 
   public shared ({ caller }) func addTopCryptosToCache(newTopCryptos : [Coin]) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can update crypto cache");
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update crypto cache");
     };
     cachedTopCryptos.clear();
     for (newCoin in newTopCryptos.values()) {
@@ -475,13 +490,25 @@ actor {
     isCompleted : Bool;
   };
 
-  let portfolioGoals = List.empty<PortfolioGoal>();
+  let userPortfolioGoals = Map.empty<Principal, List.List<PortfolioGoal>>();
+
+  func getUserGoals(user : Principal) : List.List<PortfolioGoal> {
+    switch (userPortfolioGoals.get(user)) {
+      case (?goals) { goals };
+      case (null) {
+        let newGoals = List.empty<PortfolioGoal>();
+        userPortfolioGoals.add(user, newGoals);
+        newGoals;
+      };
+    };
+  };
 
   public query ({ caller }) func getPortfolioGoals() : async [PortfolioGoal] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access portfolio goals");
     };
-    portfolioGoals.toArray();
+    let goals = getUserGoals(caller);
+    goals.toArray();
   };
 
   public shared ({ caller }) func savePortfolioGoals(goals : [PortfolioGoal]) : async () {
@@ -489,9 +516,10 @@ actor {
       Runtime.trap("Unauthorized: Only users can save portfolio goals");
     };
 
-    portfolioGoals.clear();
+    let userGoals = getUserGoals(caller);
+    userGoals.clear();
     for (goal in goals.values()) {
-      portfolioGoals.add(goal);
+      userGoals.add(goal);
     };
   };
 
@@ -523,3 +551,4 @@ actor {
     userProfiles.add(caller, profile);
   };
 };
+

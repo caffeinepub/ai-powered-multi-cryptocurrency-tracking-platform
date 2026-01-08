@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useTop50Cryptocurrencies, useICPPrice } from '@/hooks/useQueries';
+import { useTop100Cryptocurrencies, useICPPrice } from '@/hooks/useQueries';
 import { Target, PieChart, TrendingUp, DollarSign, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
@@ -28,7 +28,7 @@ export function InvestmentPlanner() {
   ]);
   const [selectedCrypto, setSelectedCrypto] = useState('');
 
-  const { data: cryptos, isLoading: cryptosLoading } = useTop50Cryptocurrencies();
+  const { data: cryptos, isLoading: cryptosLoading } = useTop100Cryptocurrencies();
   const { data: icpPrice } = useICPPrice();
 
   const totalPercentage = useMemo(() => {

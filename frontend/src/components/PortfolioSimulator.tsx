@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useTop50Cryptocurrencies } from '@/hooks/useQueries';
+import { useTop100Cryptocurrencies } from '@/hooks/useQueries';
 import { TrendingUp, Target, Calendar, DollarSign, AlertCircle, RefreshCw } from 'lucide-react';
 import {
   LineChart,
@@ -39,7 +39,7 @@ export function PortfolioSimulator() {
   const [marketCondition, setMarketCondition] = useState<MarketCondition>('bull');
   const [selectedCrypto, setSelectedCrypto] = useState('internet-computer');
   
-  const { data: cryptos, isLoading: cryptosLoading } = useTop50Cryptocurrencies();
+  const { data: cryptos, isLoading: cryptosLoading } = useTop100Cryptocurrencies();
 
   // Calculate simulation data
   const simulationData = useMemo<SimulationResult[]>(() => {
