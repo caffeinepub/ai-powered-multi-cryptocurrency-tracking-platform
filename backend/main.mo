@@ -7,9 +7,7 @@ import OutCall "http-outcalls/outcall";
 import Runtime "mo:core/Runtime";
 import Int "mo:core/Int";
 import Text "mo:core/Text";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   let cacheDurationNs = 24 * 60 * 60 * 1_000_000_000;
 
@@ -185,4 +183,3 @@ actor {
     filtered.toArray();
   };
 };
-

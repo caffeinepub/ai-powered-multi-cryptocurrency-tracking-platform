@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useICPHistoricalData, usePriceAlerts, type TimeframeOption } from '@/hooks/useQueries';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, TooltipProps } from 'recharts';
 import { format } from 'date-fns';
 import { Info, RefreshCw } from 'lucide-react';
 
@@ -26,6 +26,29 @@ const TIMEFRAME_OPTIONS: { value: TimeframeOption; label: string }[] = [
   { value: '3M', label: '3M' },
   { value: '1y', label: '1y' },
 ];
+
+// Custom tooltip component for better hover information
+function CustomTooltip({ active, payload, label }: TooltipProps<number, string>) {
+  if (!active || !payload || !payload.length) {
+    return null;
+  }
+
+  const price = payload[0].value as number;
+  const timestamp = label as number;
+
+  return (
+    <div className="rounded-lg border bg-popover p-3 shadow-md">
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-muted-foreground">
+          {format(new Date(timestamp), 'MMM dd, yyyy HH:mm:ss')}
+        </p>
+        <p className="text-sm font-bold">
+          Price: <span className="text-primary">${price.toFixed(4)}</span>
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export function ICPPriceChart() {
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('1d');
@@ -50,7 +73,7 @@ export function ICPPriceChart() {
     );
   }
 
-  if (error || !historicalData || historicalData.length === 0) {
+  if (error) {
     return (
       <Card>
         <CardHeader>
@@ -62,6 +85,34 @@ export function ICPPriceChart() {
             <Info className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
               <span>Unable to load chart data. Please try again.</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="ml-4"
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!historicalData || historicalData.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>ICP Price Chart</CardTitle>
+          <CardDescription>Historical price data with customizable timeframes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>No data available for the selected timeframe. Try a different interval.</span>
               <Button
                 variant="outline"
                 size="sm"
@@ -92,14 +143,6 @@ export function ICPPriceChart() {
       return format(new Date(timestamp), 'MMM dd');
     } else {
       return format(new Date(timestamp), 'MMM yyyy');
-    }
-  };
-
-  const formatTooltipTimestamp = (timestamp: number) => {
-    if (['1m', '2m', '3m', '5m', '10m', '15m', '30m', '1h', '2h', '4h', '6h'].includes(selectedTimeframe)) {
-      return format(new Date(timestamp), 'MMM dd, yyyy HH:mm');
-    } else {
-      return format(new Date(timestamp), 'MMM dd, yyyy');
     }
   };
 
@@ -137,6 +180,7 @@ export function ICPPriceChart() {
                 size="sm"
                 onClick={() => handleTimeframeChange(option.value)}
                 className="h-8 px-3 text-xs"
+                disabled={isFetching}
               >
                 {option.label}
               </Button>
@@ -159,15 +203,7 @@ export function ICPPriceChart() {
               tickFormatter={(value) => `$${value.toFixed(2)}`}
               className="text-xs"
             />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--popover))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-              }}
-              labelFormatter={(value) => formatTooltipTimestamp(value as number)}
-              formatter={(value: number) => [`$${value.toFixed(3)}`, 'Price']}
-            />
+            <Tooltip content={<CustomTooltip />} />
             {alerts?.map((alert) => (
               <ReferenceLine
                 key={alert.price}

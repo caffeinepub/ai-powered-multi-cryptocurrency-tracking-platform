@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,17 +14,58 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Search, AlertCircle, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Search, AlertCircle, RefreshCw, X } from 'lucide-react';
 
 export function Top50Dashboard() {
   const { data: cryptos, isLoading, error, refetch } = useTop50Cryptocurrencies();
   const [searchQuery, setSearchQuery] = useState('');
+  const [nameFilter, setNameFilter] = useState('');
+  const [symbolFilter, setSymbolFilter] = useState('');
+  const [priceFilter, setPriceFilter] = useState('');
+  const [changeFilter, setChangeFilter] = useState('');
+  const [marketCapFilter, setMarketCapFilter] = useState('');
 
-  const filteredCryptos = cryptos?.filter(
-    (crypto) =>
-      crypto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      crypto.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCryptos = useMemo(() => {
+    if (!cryptos) return [];
+
+    return cryptos.filter((crypto) => {
+      // Global search filter
+      const matchesSearch = searchQuery === '' || 
+        crypto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        crypto.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Column-specific filters
+      const matchesName = nameFilter === '' || 
+        crypto.name.toLowerCase().includes(nameFilter.toLowerCase());
+      
+      const matchesSymbol = symbolFilter === '' || 
+        crypto.symbol.toLowerCase().includes(symbolFilter.toLowerCase());
+      
+      const matchesPrice = priceFilter === '' || 
+        crypto.current_price.toString().includes(priceFilter);
+      
+      const matchesChange = changeFilter === '' || 
+        crypto.price_change_percentage_24h.toFixed(2).includes(changeFilter);
+      
+      const matchesMarketCap = marketCapFilter === '' || 
+        (crypto.market_cap / 1e9).toFixed(2).includes(marketCapFilter);
+
+      return matchesSearch && matchesName && matchesSymbol && 
+             matchesPrice && matchesChange && matchesMarketCap;
+    });
+  }, [cryptos, searchQuery, nameFilter, symbolFilter, priceFilter, changeFilter, marketCapFilter]);
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setNameFilter('');
+    setSymbolFilter('');
+    setPriceFilter('');
+    setChangeFilter('');
+    setMarketCapFilter('');
+  };
+
+  const hasActiveFilters = searchQuery || nameFilter || symbolFilter || 
+                          priceFilter || changeFilter || marketCapFilter;
 
   if (error) {
     return (
@@ -66,14 +107,27 @@ export function Top50Dashboard() {
               <CardTitle>Market Overview</CardTitle>
               <CardDescription>Real-time prices and 24h changes</CardDescription>
             </div>
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search cryptocurrencies..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative w-full md:w-72">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search cryptocurrencies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="whitespace-nowrap"
+                >
+                  <X className="mr-1 h-4 w-4" />
+                  Clear Filters
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -90,10 +144,66 @@ export function Top50Dashboard() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-16">#</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-right">24h Change</TableHead>
-                    <TableHead className="text-right hidden md:table-cell">Market Cap</TableHead>
+                    <TableHead>
+                      <div className="space-y-2">
+                        <div>Name</div>
+                        <Input
+                          placeholder="Filter name..."
+                          value={nameFilter}
+                          onChange={(e) => setNameFilter(e.target.value)}
+                          className="h-8 text-xs"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </TableHead>
+                    <TableHead>
+                      <div className="space-y-2">
+                        <div>Symbol</div>
+                        <Input
+                          placeholder="Filter symbol..."
+                          value={symbolFilter}
+                          onChange={(e) => setSymbolFilter(e.target.value)}
+                          className="h-8 text-xs"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <div className="space-y-2">
+                        <div>Price</div>
+                        <Input
+                          placeholder="Filter price..."
+                          value={priceFilter}
+                          onChange={(e) => setPriceFilter(e.target.value)}
+                          className="h-8 text-xs"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <div className="space-y-2">
+                        <div>24h Change</div>
+                        <Input
+                          placeholder="Filter change..."
+                          value={changeFilter}
+                          onChange={(e) => setChangeFilter(e.target.value)}
+                          className="h-8 text-xs"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-right hidden md:table-cell">
+                      <div className="space-y-2">
+                        <div>Market Cap</div>
+                        <Input
+                          placeholder="Filter cap..."
+                          value={marketCapFilter}
+                          onChange={(e) => setMarketCapFilter(e.target.value)}
+                          className="h-8 text-xs"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </TableHead>
                     <TableHead className="text-right hidden lg:table-cell">Volume (24h)</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -115,10 +225,12 @@ export function Top50Dashboard() {
                               />
                               <div>
                                 <div className="font-semibold">{crypto.name}</div>
-                                <div className="text-xs text-muted-foreground uppercase">
-                                  {crypto.symbol}
-                                </div>
                               </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-xs text-muted-foreground uppercase">
+                              {crypto.symbol}
                             </div>
                           </TableCell>
                           <TableCell className="text-right font-semibold">
@@ -152,8 +264,10 @@ export function Top50Dashboard() {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
-                        No cryptocurrencies found matching "{searchQuery}"
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        {hasActiveFilters 
+                          ? 'No cryptocurrencies found matching your filters'
+                          : 'No data available'}
                       </TableCell>
                     </TableRow>
                   )}

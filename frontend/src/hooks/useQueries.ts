@@ -73,14 +73,14 @@ export function useICPPrice() {
   });
 }
 
-// Helper function to resample data on the frontend
+// Helper function to resample data on the frontend with improved accuracy
 function resampleData(data: HistoricalDataPoint[], intervalMinutes: number): HistoricalDataPoint[] {
   if (data.length === 0) return [];
   
   const intervalMs = intervalMinutes * 60 * 1000;
   const grouped: { [key: number]: number[] } = {};
   
-  // Group data points by interval
+  // Group data points by interval bucket
   data.forEach(point => {
     const bucketKey = Math.floor(point.timestamp / intervalMs) * intervalMs;
     if (!grouped[bucketKey]) {
@@ -89,38 +89,55 @@ function resampleData(data: HistoricalDataPoint[], intervalMinutes: number): His
     grouped[bucketKey].push(point.price);
   });
   
-  // Calculate average for each bucket
-  return Object.entries(grouped)
+  // Calculate average for each bucket and sort by timestamp
+  const resampled = Object.entries(grouped)
     .map(([timestamp, prices]) => ({
       timestamp: parseInt(timestamp),
       price: prices.reduce((sum, p) => sum + p, 0) / prices.length,
     }))
     .sort((a, b) => a.timestamp - b.timestamp);
+  
+  // Ensure we have enough data points for visualization
+  if (resampled.length < 2) {
+    return data.slice(-100); // Return last 100 raw points if resampling produces too few points
+  }
+  
+  return resampled;
 }
 
-// Get interval configuration for timeframe
-function getTimeframeConfig(timeframe: TimeframeOption): { intervalMinutes: number; daysBack: number; coingeckoInterval?: string } {
-  const configs: Record<TimeframeOption, { intervalMinutes: number; daysBack: number; coingeckoInterval?: string }> = {
-    '1m': { intervalMinutes: 1, daysBack: 1, coingeckoInterval: 'minutely' },
-    '2m': { intervalMinutes: 2, daysBack: 1, coingeckoInterval: 'minutely' },
-    '3m': { intervalMinutes: 3, daysBack: 1, coingeckoInterval: 'minutely' },
-    '5m': { intervalMinutes: 5, daysBack: 1, coingeckoInterval: 'minutely' },
-    '10m': { intervalMinutes: 10, daysBack: 2, coingeckoInterval: 'minutely' },
-    '15m': { intervalMinutes: 15, daysBack: 2, coingeckoInterval: 'minutely' },
-    '30m': { intervalMinutes: 30, daysBack: 3, coingeckoInterval: 'minutely' },
-    '1h': { intervalMinutes: 60, daysBack: 7, coingeckoInterval: 'hourly' },
-    '2h': { intervalMinutes: 120, daysBack: 14, coingeckoInterval: 'hourly' },
-    '4h': { intervalMinutes: 240, daysBack: 30, coingeckoInterval: 'hourly' },
-    '6h': { intervalMinutes: 360, daysBack: 60, coingeckoInterval: 'hourly' },
-    '1d': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily' },
-    '1M': { intervalMinutes: 1440, daysBack: 30, coingeckoInterval: 'daily' },
-    '3M': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily' },
-    '1y': { intervalMinutes: 1440, daysBack: 365, coingeckoInterval: 'daily' },
+// Get interval configuration for timeframe with improved settings
+function getTimeframeConfig(timeframe: TimeframeOption): { 
+  intervalMinutes: number; 
+  daysBack: number; 
+  coingeckoInterval?: string;
+  minDataPoints: number;
+} {
+  const configs: Record<TimeframeOption, { 
+    intervalMinutes: number; 
+    daysBack: number; 
+    coingeckoInterval?: string;
+    minDataPoints: number;
+  }> = {
+    '1m': { intervalMinutes: 1, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '2m': { intervalMinutes: 2, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '3m': { intervalMinutes: 3, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '5m': { intervalMinutes: 5, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '10m': { intervalMinutes: 10, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '15m': { intervalMinutes: 15, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '30m': { intervalMinutes: 30, daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 60 },
+    '1h': { intervalMinutes: 60, daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 48 },
+    '2h': { intervalMinutes: 120, daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 48 },
+    '4h': { intervalMinutes: 240, daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 48 },
+    '6h': { intervalMinutes: 360, daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 48 },
+    '1d': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 30 },
+    '1M': { intervalMinutes: 1440, daysBack: 30, coingeckoInterval: 'daily', minDataPoints: 30 },
+    '3M': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 30 },
+    '1y': { intervalMinutes: 1440, daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 30 },
   };
   return configs[timeframe];
 }
 
-// Fetch ICP historical data for chart with timeframe support
+// Fetch ICP historical data for chart with improved timeframe support
 export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
   const { actor, isFetching } = useActor();
   const config = getTimeframeConfig(timeframe);
@@ -133,17 +150,32 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
         const response = await fetch(
           `https://api.coingecko.com/api/v3/coins/internet-computer/market_chart?vs_currency=usd&days=${config.daysBack}&interval=${config.coingeckoInterval || 'hourly'}`
         );
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch from CoinGecko');
+          throw new Error(`CoinGecko API error: ${response.status}`);
         }
+        
         const data = await response.json();
+        
+        if (!data.prices || data.prices.length === 0) {
+          throw new Error('No price data returned from CoinGecko');
+        }
+        
         const rawData = data.prices.map(([timestamp, price]: [number, number]) => ({
           timestamp,
           price,
         }));
         
-        // Resample data based on timeframe
-        return resampleData(rawData, config.intervalMinutes);
+        // Resample data based on timeframe for consistent intervals
+        const resampledData = resampleData(rawData, config.intervalMinutes);
+        
+        // Ensure we have enough data points
+        if (resampledData.length < config.minDataPoints && rawData.length >= config.minDataPoints) {
+          // If resampling reduced data too much, use raw data with lighter resampling
+          return resampleData(rawData, Math.max(1, Math.floor(config.intervalMinutes / 2)));
+        }
+        
+        return resampledData;
       } catch (error) {
         console.warn('CoinGecko API failed, falling back to cached data:', error);
         
@@ -155,47 +187,65 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
           const resampledData = await actor.getResampledPriceHistory(BigInt(config.intervalMinutes));
           
           if (resampledData.length > 0) {
-            return resampledData.map((entry: PriceCache) => ({
+            const backendData = resampledData.map((entry: PriceCache) => ({
               timestamp: Number(entry.timestamp) / 1_000_000, // Convert nanoseconds to milliseconds
               price: entry.price,
             }));
+            
+            // Sort by timestamp to ensure proper ordering
+            return backendData.sort((a, b) => a.timestamp - b.timestamp);
           }
         } catch (backendError) {
           console.warn('Backend resampling failed:', backendError);
         }
         
         // Fallback to raw cached data
-        const cachedData = await actor.getCachedPriceHistory();
-        
-        if (cachedData.length > 0) {
-          const rawCachedData = cachedData.map((entry: PriceCache) => ({
-            timestamp: Number(entry.timestamp) / 1_000_000,
-            price: entry.price,
-          }));
+        try {
+          const cachedData = await actor.getCachedPriceHistory();
           
-          // Resample on frontend
-          return resampleData(rawCachedData, config.intervalMinutes);
+          if (cachedData.length > 0) {
+            const rawCachedData = cachedData.map((entry: PriceCache) => ({
+              timestamp: Number(entry.timestamp) / 1_000_000,
+              price: entry.price,
+            })).sort((a, b) => a.timestamp - b.timestamp);
+            
+            // Resample on frontend
+            const resampled = resampleData(rawCachedData, config.intervalMinutes);
+            
+            if (resampled.length >= 2) {
+              return resampled;
+            }
+            
+            // Return raw data if resampling fails
+            return rawCachedData.slice(-100);
+          }
+        } catch (cacheError) {
+          console.warn('Failed to fetch cached data:', cacheError);
         }
         
         // If no cached data, generate synthetic data based on last known price
-        const lastPrice = await actor.getLastCachedPrice();
-        if (lastPrice !== null) {
-          const now = Date.now();
-          const syntheticData: HistoricalDataPoint[] = [];
-          const pointsCount = Math.min(100, (config.daysBack * 24 * 60) / config.intervalMinutes);
-          
-          for (let i = pointsCount; i >= 0; i--) {
-            const timestamp = now - (i * config.intervalMinutes * 60 * 1000);
-            const variation = 1 + (Math.random() - 0.5) * 0.04;
-            syntheticData.push({
-              timestamp,
-              price: lastPrice * variation,
-            });
+        try {
+          const lastPrice = await actor.getLastCachedPrice();
+          if (lastPrice !== null && lastPrice !== undefined) {
+            const now = Date.now();
+            const syntheticData: HistoricalDataPoint[] = [];
+            const pointsCount = Math.max(config.minDataPoints, 50);
+            
+            for (let i = pointsCount; i >= 0; i--) {
+              const timestamp = now - (i * config.intervalMinutes * 60 * 1000);
+              const variation = 1 + (Math.random() - 0.5) * 0.02; // Smaller variation for more realistic data
+              syntheticData.push({
+                timestamp,
+                price: lastPrice * variation,
+              });
+            }
+            return syntheticData;
           }
-          return syntheticData;
+        } catch (lastPriceError) {
+          console.warn('Failed to get last cached price:', lastPriceError);
         }
         
-        throw new Error('No data available');
+        throw new Error('No data available from any source');
       }
     },
     enabled: !!actor && !isFetching,
@@ -206,7 +256,7 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
   });
 }
 
-// Fetch top 50 cryptocurrencies from backend
+// Fetch top 50 cryptocurrencies from backend with improved error handling
 export function useTop50Cryptocurrencies() {
   const { actor, isFetching } = useActor();
 
@@ -215,7 +265,13 @@ export function useTop50Cryptocurrencies() {
     queryFn: async () => {
       if (!actor) throw new Error('Actor not initialized');
       const response = await actor.getTopCryptos();
-      return JSON.parse(response);
+      const data = JSON.parse(response);
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid response format from backend');
+      }
+      
+      return data;
     },
     enabled: !!actor && !isFetching,
     refetchInterval: 30000, // Refetch every 30 seconds
@@ -236,6 +292,7 @@ export function usePortfolioSummary() {
       return actor.getPortfolioSummary();
     },
     enabled: !!actor && !isFetching,
+    retry: 2,
   });
 }
 
@@ -252,6 +309,7 @@ export function usePriceAlerts() {
     },
     enabled: !!actor && !isFetching,
     refetchInterval: 10000, // Check alerts every 10 seconds
+    retry: 2,
   });
 }
 
@@ -276,6 +334,7 @@ export function useAddAlert() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
     },
+    retry: 1,
   });
 }
 
@@ -307,6 +366,7 @@ export function useRemoveAlert() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
     },
+    retry: 1,
   });
 }
 
@@ -322,5 +382,6 @@ export function useToggleAlert() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
     },
+    retry: 1,
   });
 }
