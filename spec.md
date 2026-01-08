@@ -22,11 +22,14 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Optimize high-frequency data caching for short intervals while maintaining performance
   - Synchronize chart data refresh and timeframe switching with backend caching for reliable rendering
   - Align backend caching and resampling mechanism to handle varying data densities across all timeframes
+  - Fix chart timeframe rendering to ensure each interval (1m, 2m, 3m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 6h, 1d, 1mo, 1q, 1y) displays accurate data using cached and live historical data
+  - Improve chart responsiveness with cross-timeframe synchronization and smooth visual transitions between intervals
 - Implement interactive chart hover tooltips:
   - Display comprehensive details including precise date/time, price, and any active indicator values
   - Show formatted price values and readable time stamps
   - Include technical indicator values when indicators are enabled
   - Improve chart readability and user interaction
+  - Ensure accurate hover tooltips across all timeframes
 - Implement technical indicator system with interactive controls:
   - Optional RSI (Relative Strength Index) indicator with toggle on/off functionality
   - Optional MACD (Moving Average Convergence Divergence) indicator with toggle on/off functionality
@@ -35,6 +38,7 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Interactive controls to enable/disable each indicator independently
   - Proper indicator scaling and visualization on the chart with smooth transitions between timeframes
   - Refined indicator calculations to maintain valid results when switching between short and long intervals
+  - Verify compatibility with existing indicators and ensure they remain accurate when switching timeframes
 - Implement comprehensive price alert system with full manual management:
   - View all currently active alerts with their status (triggered, pending, inactive)
   - Add new alerts by entering custom target prices
@@ -42,11 +46,15 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Visual indicators for different alert states
   - Synchronize alert actions with backend through React Query mutation hooks
   - Instant UI updates when alerts are added, removed, or status changes
-- Show investment portfolio summary:
+- Show investment portfolio summary with accurate real-time calculations:
   - Total coins: 1864 ICP
   - Average cost: $6.152
-  - Current total value (calculated in real-time based on live price)
-  - Current profit/loss percentage and amount
+  - Current total value (calculated in real-time based on live ICP price)
+  - Current profit/loss percentage and amount (unrealized gains/losses)
+  - ROI visualization with clear formatting
+  - Dynamic updates in real time when ICP price changes
+  - Responsive formatting for both desktop and mobile devices
+  - Clear display of both absolute profit/loss values and percentage changes
 
 ### Top 50 Cryptocurrencies Dashboard
 - Display live data for the top 50 cryptocurrencies by market capitalization
@@ -96,6 +104,11 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Provide clear feedback when API calls fail
   - Graceful recovery from temporary API or connection issues on both chart and table components
 - Call backend endpoints instead of external APIs directly
+- Portfolio Summary component with real-time investment calculations:
+  - Display total coins, average cost, current value, and profit/loss metrics
+  - Real-time updates when ICP price changes
+  - Responsive design for desktop and mobile
+  - Clear visual indicators for gains/losses with appropriate color coding
 
 ### Backend
 - Store user's ICP investment data (1864 coins, $6.152 average cost)
@@ -114,11 +127,13 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Enhanced `getResampledPriceHistory` function with improved backend caching and resampling mechanism
   - Optimize caching strategy to handle high-frequency data while maintaining performance and data consistency
   - Synchronize caching with frontend chart refresh and timeframe switching for improved responsiveness
+  - Fix backend data provision to ensure accurate historical data for all 15 timeframe options
 - Calculate technical indicators for chart display:
   - RSI calculation based on selected timeframe data with enhanced handling of varying data densities
   - MACD calculation with proper signal and histogram values across different timeframes
   - TTM Squeeze calculation with appropriate squeeze detection for all intervals
   - Provide indicator data endpoints that match the selected chart timeframe with smooth transitions
+  - Ensure indicator accuracy when switching between timeframes
 - Fetch live ICP price data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd`)
 - Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
@@ -127,8 +142,12 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Chart data for all supported timeframes with accurate resampling and fallback support
   - Technical indicator data (RSI, MACD, TTM Squeeze) calculated for the selected timeframe with enhanced data density handling
   - Top 50 cryptocurrencies market data
-  - Investment portfolio calculations
+  - Investment portfolio calculations with real-time profit/loss metrics
   - Complete price alert management with status synchronization
+- Portfolio calculation endpoints:
+  - Calculate current portfolio value based on live ICP price
+  - Calculate unrealized profit/loss (both absolute and percentage)
+  - Provide ROI calculations for frontend display
 
 ### Data Management
 - Backend stores investment portfolio information
@@ -139,6 +158,7 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Clean data transformation from external API responses to frontend-consumable format
 - Proper maintenance of high-frequency price history for accurate short-interval charts with enhanced data consistency
 - Technical indicator calculations stored and served based on timeframe requirements with refined handling of varying data densities
+- Real-time portfolio value calculations based on current ICP price and stored investment data
 
 ## User Interface
 - Two main sections: ICP tracker and top 50 dashboard
@@ -153,4 +173,9 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Visual indicators for alert states (different colors/icons for triggered, pending, inactive)
 - Improved error states with actionable user feedback and graceful recovery
 - Seamless chart transitions between timeframes with consistent data updates and enhanced responsiveness
+- Portfolio Summary section with clear, responsive formatting:
+  - Investment overview displaying coins owned, average cost, current value
+  - Real-time profit/loss calculations with percentage and absolute values
+  - ROI visualization with appropriate color coding
+  - Responsive design for desktop and mobile devices
 - Application content displayed in English

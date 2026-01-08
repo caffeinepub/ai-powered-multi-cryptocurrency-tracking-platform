@@ -152,7 +152,7 @@ export function ICPTracker() {
 
       {/* Portfolio and Alerts */}
       <div className="grid gap-6 md:grid-cols-2">
-        <PortfolioCard currentPrice={currentPrice} />
+        <PortfolioCard />
         <PriceAlertsCard alerts={alerts} currentPrice={currentPrice} />
       </div>
     </section>

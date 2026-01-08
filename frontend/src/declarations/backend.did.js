@@ -16,6 +16,18 @@ export const PriceCache = IDL.Record({
   'timestamp' : IDL.Int,
   'price' : IDL.Float64,
 });
+export const TimeframeParams = IDL.Record({
+  'timeframe' : IDL.Text,
+  'intervalNanos' : IDL.Int,
+  'priceData' : IDL.Vec(PriceCache),
+});
+export const PortfolioSummary = IDL.Record({
+  'coins' : IDL.Float64,
+  'profitLossDollar' : IDL.Float64,
+  'avgCost' : IDL.Float64,
+  'currentValue' : IDL.Float64,
+  'profitLossPercent' : IDL.Float64,
+});
 export const http_header = IDL.Record({
   'value' : IDL.Text,
   'name' : IDL.Text,
@@ -36,7 +48,6 @@ export const TransformationOutput = IDL.Record({
 });
 
 export const idlService = IDL.Service({
-  'cachePrice' : IDL.Func([IDL.Float64], [], []),
   'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
   'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
   'getHistoricalDataRange' : IDL.Func(
@@ -44,8 +55,13 @@ export const idlService = IDL.Service({
       [IDL.Record({ 'end' : IDL.Int, 'start' : IDL.Int })],
       [],
     ),
-  'getHistoricalPriceHistory' : IDL.Func([IDL.Text], [IDL.Vec(PriceCache)], []),
+  'getHistoricalPriceHistory' : IDL.Func(
+      [TimeframeParams],
+      [IDL.Vec(PriceCache)],
+      [],
+    ),
   'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
+  'getPortfolioSummary' : IDL.Func([], [PortfolioSummary], ['query']),
   'getResampledPriceHistory' : IDL.Func([IDL.Nat], [IDL.Vec(PriceCache)], []),
   'getTopCryptos' : IDL.Func([], [IDL.Text], []),
   'recordNewICPPrice' : IDL.Func([IDL.Float64], [], []),
@@ -68,6 +84,18 @@ export const idlFactory = ({ IDL }) => {
     'timestamp' : IDL.Int,
     'price' : IDL.Float64,
   });
+  const TimeframeParams = IDL.Record({
+    'timeframe' : IDL.Text,
+    'intervalNanos' : IDL.Int,
+    'priceData' : IDL.Vec(PriceCache),
+  });
+  const PortfolioSummary = IDL.Record({
+    'coins' : IDL.Float64,
+    'profitLossDollar' : IDL.Float64,
+    'avgCost' : IDL.Float64,
+    'currentValue' : IDL.Float64,
+    'profitLossPercent' : IDL.Float64,
+  });
   const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
   const http_request_result = IDL.Record({
     'status' : IDL.Nat,
@@ -85,7 +113,6 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    'cachePrice' : IDL.Func([IDL.Float64], [], []),
     'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
     'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
     'getHistoricalDataRange' : IDL.Func(
@@ -94,11 +121,12 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'getHistoricalPriceHistory' : IDL.Func(
-        [IDL.Text],
+        [TimeframeParams],
         [IDL.Vec(PriceCache)],
         [],
       ),
     'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
+    'getPortfolioSummary' : IDL.Func([], [PortfolioSummary], ['query']),
     'getResampledPriceHistory' : IDL.Func([IDL.Nat], [IDL.Vec(PriceCache)], []),
     'getTopCryptos' : IDL.Func([], [IDL.Text], []),
     'recordNewICPPrice' : IDL.Func([IDL.Float64], [], []),

@@ -12,7 +12,8 @@ import Migration "migration";
 
 (with migration = Migration.run)
 actor {
-  let cacheDurationNs = 24 * 60 * 60 * 1_000_000_000;
+  let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
+  let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;
   type Alerts = Map.Map<Float, Bool>;
 
   type PriceAlertStatus = {
@@ -20,7 +21,7 @@ actor {
     isTriggered : Bool;
   };
 
-  public type Coin = {
+  type Coin = {
     id : Text;
     symbol : Text;
     name : Text;
@@ -32,6 +33,23 @@ actor {
   type PriceCache = {
     price : Float;
     timestamp : Int;
+  };
+
+  type ChartPriceCache = {
+    price : Float;
+    timestamp : Int;
+    open : Float;
+    high : Float;
+    low : Float;
+    close : Float;
+  };
+
+  public type PortfolioSummary = {
+    coins : Float;
+    avgCost : Float;
+    currentValue : Float;
+    profitLossDollar : Float;
+    profitLossPercent : Float;
   };
 
   // Alert system
@@ -84,26 +102,29 @@ actor {
     alerts.add(price, currentStatus);
   };
 
-  public shared ({ caller }) func cachePrice(price : Float) : async () {
-    let newEntry = {
-      price;
-      timestamp = Time.now();
-    };
-
-    let currentTime = Time.now();
-    let filtered = icpPriceHistory.filter(func(entry) { currentTime - entry.timestamp <= cacheDurationNs });
-
-    filtered.add(newEntry);
-    icpPriceHistory.clear();
-    icpPriceHistory.addAll(filtered.values());
-  };
-
   public query ({ caller }) func getCachedPriceHistory() : async [PriceCache] {
-    icpPriceHistory.toArray();
+    let currentTime = Time.now();
+    let filtered = icpPriceHistory.filter(func(entry) { currentTime - entry.timestamp <= cacheDurationInt });
+    filtered.toArray();
   };
 
   public shared ({ caller }) func recordNewICPPrice(price : Float) : async () {
-    await cachePrice(price);
+    let newEntry = {
+      price;
+      timestamp = Time.now() : Int;
+    };
+
+    let currentTimeInt = Time.now() : Int;
+    let currentTimeNat = Int.abs(currentTimeInt);
+    let filtered = icpPriceHistory.filter(
+      func(entry) {
+        Int.abs(currentTimeInt - entry.timestamp) <= cacheDurationNat
+      }
+    );
+
+    icpPriceHistory.clear();
+    icpPriceHistory.addAll(filtered.values());
+    icpPriceHistory.add(newEntry);
   };
 
   public type Timeframe = {
@@ -132,15 +153,130 @@ actor {
     };
   };
 
-  public shared ({ caller }) func getHistoricalPriceHistory(timeframe : Text) : async [PriceCache] {
-    let intervalNanos = getMinutesForTimeframe(timeframe) * 60 * 1_000_000_000;
-    await getResampledPriceHistory(intervalNanos);
+  public type TimeframeParams = {
+    intervalNanos : Int;
+    timeframe : Text;
+    priceData : [PriceCache];
+  };
+
+  func findClosestEntry(array : [PriceCache], time : Int) : ?PriceCache {
+    let filtered = array.filter(
+      func(entry) {
+        Int.abs(entry.timestamp - time) <= 60 * 1_000_000_000; // 1 minute in nanos
+      }
+    );
+    switch (filtered.size()) {
+      case (0) { null };
+      case (_) { ?filtered[0] };
+    };
+  };
+
+  func getRelativePosition(_timestamp : Int, array : [PriceCache]) : {
+    left : ?PriceCache;
+    right : ?PriceCache;
+    ratio : Float;
+  } {
+    if (array.size() == 0 or array.size() == 1) {
+      return { left = null; right = null; ratio = 0.0 };
+    };
+    let start = array[0].timestamp.toFloat();
+    let end = array[array.size() - 1].timestamp.toFloat();
+    let totalRange = end - start;
+    let positionInRange = (_timestamp.toFloat() - start);
+    let ratio = if (totalRange > 0.0) {
+      positionInRange / totalRange;
+    } else {
+      0.0;
+    };
+
+    var left : ?PriceCache = null;
+    var right : ?PriceCache = null;
+
+    for (entry in array.values()) {
+      if (_timestamp >= entry.timestamp) { left := ?entry };
+      if (_timestamp <= entry.timestamp) {
+        right := ?entry;
+        Runtime.trap("Unexpected right timestamp.");
+      };
+    };
+    { left; right; ratio };
+  };
+
+  public shared ({ caller }) func getHistoricalPriceHistory(params : TimeframeParams) : async [PriceCache] {
+    let intervalNs = params.intervalNanos;
+    let now = Time.now();
+
+    // 1. Filter recent data.
+    let recentHistory = params.priceData.filter(
+      func(entry) {
+        (now - entry.timestamp).toFloat() <= cacheDurationInt.toFloat();
+      }
+    );
+
+    if (recentHistory.size() == 0) { return [] };
+
+    // Use array for better access.
+    let array = recentHistory;
+
+    // 2. Map exact (aligned) entries to new array.
+    let mappedAligned = array.map(
+      func(entry) {
+        {
+          price = entry.price;
+          timestamp = entry.timestamp;
+        };
+      }
+    );
+
+    // 3. Interpolate missing entries (not aligned).
+    let final = mappedAligned.map(
+      func(entry) {
+        // Try direct match.
+        switch (findClosestEntry(array, entry.timestamp)) {
+          case (?closest) {
+            let delta = Int.abs(closest.timestamp - entry.timestamp);
+            if (delta <= 60 * 1_000_000_000) // 1 minute in nanos
+            {
+              return {
+                price = closest.price;
+                timestamp = entry.timestamp;
+              };
+            };
+          };
+          case (null) {};
+        };
+
+        // If no direct match, interpolate.
+        let { left; right; ratio } = getRelativePosition(entry.timestamp, array);
+
+        switch (left, right) {
+          case (?l, ?r) {
+            let interpPrice = l.price * (1.0 - ratio) + r.price * ratio;
+            {
+              price = interpPrice;
+              timestamp = entry.timestamp;
+            };
+          };
+          case (?l, null) { l };
+          case (null, ?r) { r };
+          case (null, null) {
+            { entry with price = 0.0 };
+          };
+        };
+      }
+    );
+
+    final;
   };
 
   public shared ({ caller }) func getResampledPriceHistory(intervalNanos : Nat) : async [PriceCache] {
     let intervalNs = intervalNanos.toInt();
     let now = Time.now();
-    let recentHistory = icpPriceHistory.filter(func(entry) { now - entry.timestamp <= cacheDurationNs }).toArray();
+    let recentHistory = icpPriceHistory.filter(
+      func(entry) {
+        Int.abs(now - entry.timestamp) <= cacheDurationNat
+      }
+    ).toArray();
     if (recentHistory.size() == 0) { return [] };
 
     let grouped = List.empty<List.List<PriceCache>>();
@@ -150,7 +286,7 @@ actor {
     for (entry in recentHistory.values()) {
       switch (groupStartTime) {
         case (?startTime) {
-          if (entry.timestamp - startTime <= intervalNs) {
+          if (Int.abs(entry.timestamp - startTime) <= cacheDurationNat) {
             currentGroup.add(entry);
           } else {
             grouped.add(currentGroup);
@@ -188,18 +324,43 @@ actor {
     let entries = icpPriceHistory.toArray();
     if (entries.size() == 0) {
       { start = 0; end = 0 };
-    } else if (entries.size() == 1) {
-      { start = entries[0].timestamp; end = entries[0].timestamp };
     } else {
       var min = entries[0].timestamp;
       var max = entries[0].timestamp;
-      let entriesIter = entries.sliceToArray(1, entries.size()).values();
+      let entriesIter = entries.values();
 
       for (entry in entriesIter) {
         if (entry.timestamp < min) { min := entry.timestamp };
         if (entry.timestamp > max) { max := entry.timestamp };
       };
       { start = min; end = max };
+    };
+  };
+
+  // Portfolio summary
+  public query ({ caller }) func getPortfolioSummary() : async PortfolioSummary {
+    let coins = 1864.0;
+    let avgCost = 6.152;
+    let icpPrice = switch (icpPriceHistory.last()) {
+      case (?latest) { latest.price };
+      case (null) { 0.0 };
+    };
+
+    let currentValue = coins * icpPrice;
+    let originalInvestment = coins * avgCost;
+    let profitLossDollar = currentValue - originalInvestment;
+    let profitLossPercent = if (originalInvestment > 0) {
+      (profitLossDollar) / originalInvestment * 100.0;
+    } else {
+      0.0;
+    };
+
+    {
+      coins;
+      avgCost;
+      currentValue;
+      profitLossDollar;
+      profitLossPercent;
     };
   };
 };

@@ -10,8 +10,20 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface PortfolioSummary {
+  'coins' : number,
+  'profitLossDollar' : number,
+  'avgCost' : number,
+  'currentValue' : number,
+  'profitLossPercent' : number,
+}
 export interface PriceAlertStatus { 'isTriggered' : boolean, 'price' : number }
 export interface PriceCache { 'timestamp' : bigint, 'price' : number }
+export interface TimeframeParams {
+  'timeframe' : string,
+  'intervalNanos' : bigint,
+  'priceData' : Array<PriceCache>,
+}
 export interface TransformationInput {
   'context' : Uint8Array,
   'response' : http_request_result,
@@ -28,15 +40,18 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
-  'cachePrice' : ActorMethod<[number], undefined>,
   'getAlerts' : ActorMethod<[], Array<PriceAlertStatus>>,
   'getCachedPriceHistory' : ActorMethod<[], Array<PriceCache>>,
   'getHistoricalDataRange' : ActorMethod<
     [],
     { 'end' : bigint, 'start' : bigint }
   >,
-  'getHistoricalPriceHistory' : ActorMethod<[string], Array<PriceCache>>,
+  'getHistoricalPriceHistory' : ActorMethod<
+    [TimeframeParams],
+    Array<PriceCache>
+  >,
   'getICPLivePrice' : ActorMethod<[], string>,
+  'getPortfolioSummary' : ActorMethod<[], PortfolioSummary>,
   'getResampledPriceHistory' : ActorMethod<[bigint], Array<PriceCache>>,
   'getTopCryptos' : ActorMethod<[], string>,
   'recordNewICPPrice' : ActorMethod<[number], undefined>,

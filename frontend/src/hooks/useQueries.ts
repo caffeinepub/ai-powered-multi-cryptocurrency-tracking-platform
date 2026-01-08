@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { PriceAlertStatus, PriceCache } from '@/backend';
+import type { PriceAlertStatus, PriceCache, PortfolioSummary } from '@/backend';
 
 // CoinGecko API types
 interface CoinGeckoPrice {
@@ -70,6 +70,24 @@ export function useICPPrice() {
     staleTime: 25000,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+}
+
+// Fetch portfolio summary from backend
+export function usePortfolioSummary() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<PortfolioSummary>({
+    queryKey: ['portfolio-summary'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not initialized');
+      const summary = await actor.getPortfolioSummary();
+      return summary;
+    },
+    enabled: !!actor && !isFetching,
+    refetchInterval: 30000, // Refetch every 30 seconds to update with live price
+    staleTime: 25000,
+    retry: 2,
   });
 }
 

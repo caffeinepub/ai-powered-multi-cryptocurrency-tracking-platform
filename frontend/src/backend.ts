@@ -89,22 +89,34 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface TransformationInput {
-    context: Uint8Array;
-    response: http_request_result;
-}
 export interface PriceCache {
     timestamp: bigint;
-    price: number;
-}
-export interface PriceAlertStatus {
-    isTriggered: boolean;
     price: number;
 }
 export interface TransformationOutput {
     status: bigint;
     body: Uint8Array;
     headers: Array<http_header>;
+}
+export interface TimeframeParams {
+    timeframe: string;
+    intervalNanos: bigint;
+    priceData: Array<PriceCache>;
+}
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
+export interface PortfolioSummary {
+    coins: number;
+    profitLossDollar: number;
+    avgCost: number;
+    currentValue: number;
+    profitLossPercent: number;
+}
+export interface PriceAlertStatus {
+    isTriggered: boolean;
+    price: number;
 }
 export interface http_header {
     value: string;
@@ -116,15 +128,15 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    cachePrice(price: number): Promise<void>;
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
     getHistoricalDataRange(): Promise<{
         end: bigint;
         start: bigint;
     }>;
-    getHistoricalPriceHistory(timeframe: string): Promise<Array<PriceCache>>;
+    getHistoricalPriceHistory(params: TimeframeParams): Promise<Array<PriceCache>>;
     getICPLivePrice(): Promise<string>;
+    getPortfolioSummary(): Promise<PortfolioSummary>;
     getResampledPriceHistory(intervalNanos: bigint): Promise<Array<PriceCache>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
@@ -133,20 +145,6 @@ export interface backendInterface {
 }
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async cachePrice(arg0: number): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.cachePrice(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.cachePrice(arg0);
-            return result;
-        }
-    }
     async getAlerts(): Promise<Array<PriceAlertStatus>> {
         if (this.processError) {
             try {
@@ -192,7 +190,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getHistoricalPriceHistory(arg0: string): Promise<Array<PriceCache>> {
+    async getHistoricalPriceHistory(arg0: TimeframeParams): Promise<Array<PriceCache>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getHistoricalPriceHistory(arg0);
@@ -217,6 +215,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getICPLivePrice();
+            return result;
+        }
+    }
+    async getPortfolioSummary(): Promise<PortfolioSummary> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPortfolioSummary();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPortfolioSummary();
             return result;
         }
     }

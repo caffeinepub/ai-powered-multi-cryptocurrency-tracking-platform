@@ -1,14 +1,17 @@
 module {
   type OldActor = {
-    icpPortfolio : { coins : Float; avgCost : Float };
-    shortTimeframes : [{ name : Text; intervalMinutes : Nat }];
-    longTimeframes : [{ name : Text; intervalMinutes : Nat }];
-    chartTimeframes : [{ name : Text; intervalMinutes : Nat }];
+    cacheDurationNs : Nat;
   };
 
-  type NewActor = {};
+  type NewActor = {
+    cacheDurationInt : Nat;
+    cacheDurationNat : Nat;
+  };
 
-  public func run(_old : OldActor) : NewActor {
-    {};
+  public func run(old : OldActor) : NewActor {
+    {
+      cacheDurationInt = old.cacheDurationNs;
+      cacheDurationNat = old.cacheDurationNs;
+    };
   };
 };
