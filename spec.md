@@ -7,7 +7,15 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 
 ### ICP Live Price Tracker
 - Display a dynamic chart showing real-time ICP price changes with continuous updates
-- Implement price alert system with predefined target prices: $3.567, $4.885, $6.152, and $9.828
+- Implement robust chart data retrieval with fallback mechanisms:
+  - Primary data source: CoinGecko 7-day historical price API
+  - Fallback to cached or last-known prices when API fails
+  - Prevent "Chart data temporarily unavailable" messages through data persistence
+- Implement configurable price alert system where users can:
+  - View all currently configured alert price points with their active/inactive status
+  - Add new price alerts through input field and confirmation button
+  - Remove existing alerts with delete or toggle options
+  - See real-time updates as alert configurations change
 - Show investment portfolio summary:
   - Total coins: 1864 ICP
   - Average cost: $6.152
@@ -28,7 +36,13 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 ### Frontend
 - Clean, modern React user interface
 - Responsive design that works on desktop and mobile devices
-- Interactive price charts for ICP visualization
+- Interactive price charts for ICP visualization with reliable data display
+- Enhanced price alerts management interface:
+  - Display current alerts with status indicators
+  - Input field and button for adding new alerts
+  - Delete/toggle buttons for removing alerts
+  - Real-time synchronization with backend alert changes
+- Update frontend hooks (useQueries.ts) to fetch and update full alert list after each add/remove operation
 - Sortable table for top 50 cryptocurrencies
 - Real-time data updates without page refresh
 - Price alert notifications when targets are reached
@@ -40,27 +54,36 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 
 ### Backend
 - Store user's ICP investment data (1864 coins, $6.152 average cost)
-- Store price alert targets and their status
-- Fetch live ICP price data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd`)
+- Store and manage configurable price alert targets:
+  - Persist user-defined alert price points
+  - Track active/inactive status for each alert
+  - Handle alert additions, deletions, and status toggles
+  - Provide endpoints for full alert list retrieval
+- Implement robust price data fetching with caching:
+  - Fetch live ICP price data from CoinGecko API
+  - Cache historical chart data for fallback scenarios
+  - Store last-known prices to prevent chart data unavailability
 - Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
 - Provide endpoints for:
-  - Current ICP price and historical data
+  - Current ICP price and historical data with fallback support
   - Top 50 cryptocurrencies market data
   - Investment portfolio calculations
-  - Price alert management
+  - Configurable price alert management (add, remove, toggle, list)
 
 ### Data Management
 - Backend stores investment portfolio information
-- Backend stores price alert configurations
+- Backend stores user-configurable price alert configurations with persistence
+- Backend maintains cached price data for chart reliability
 - Backend fetches real-time price data from CoinGecko API via HTTP outcalls
-- Historical price data for chart visualization
+- Historical price data for chart visualization with fallback mechanisms
 - Clean data transformation from external API responses to frontend-consumable format
 
 ## User Interface
 - Two main sections: ICP tracker and top 50 dashboard
+- Enhanced price alerts management section with interactive controls
 - Navigation between different views
-- Responsive charts and tables
+- Responsive charts and tables with reliable data display
 - Clean typography and modern styling
 - Color coding for price changes (green for gains, red for losses)
 - Improved error states with actionable user feedback

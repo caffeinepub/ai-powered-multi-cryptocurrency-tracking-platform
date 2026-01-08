@@ -8,8 +8,8 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const PriceAlertStatus = IDL.Record({
-  'isTriggered' : IDL.Bool,
+export const AlertStatus = IDL.Record({
+  'isActive' : IDL.Bool,
   'price' : IDL.Float64,
 });
 export const ICPPortfolio = IDL.Record({
@@ -36,11 +36,12 @@ export const TransformationOutput = IDL.Record({
 });
 
 export const idlService = IDL.Service({
-  'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
+  'deleteAlert' : IDL.Func([IDL.Float64], [], []),
+  'getAlertList' : IDL.Func([], [IDL.Vec(AlertStatus)], ['query']),
+  'getHistoricalPrices' : IDL.Func([], [IDL.Vec(IDL.Float64)], ['query']),
   'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
   'getPortfolioSummary' : IDL.Func([], [ICPPortfolio], ['query']),
-  'getTopCryptos' : IDL.Func([], [IDL.Text], []),
-  'toggleAlertStatus' : IDL.Func([IDL.Float64], [], []),
+  'setAlertActive' : IDL.Func([IDL.Float64, IDL.Bool], [], []),
   'transform' : IDL.Func(
       [TransformationInput],
       [TransformationOutput],
@@ -51,8 +52,8 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const PriceAlertStatus = IDL.Record({
-    'isTriggered' : IDL.Bool,
+  const AlertStatus = IDL.Record({
+    'isActive' : IDL.Bool,
     'price' : IDL.Float64,
   });
   const ICPPortfolio = IDL.Record({
@@ -76,11 +77,12 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
+    'deleteAlert' : IDL.Func([IDL.Float64], [], []),
+    'getAlertList' : IDL.Func([], [IDL.Vec(AlertStatus)], ['query']),
+    'getHistoricalPrices' : IDL.Func([], [IDL.Vec(IDL.Float64)], ['query']),
     'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
     'getPortfolioSummary' : IDL.Func([], [ICPPortfolio], ['query']),
-    'getTopCryptos' : IDL.Func([], [IDL.Text], []),
-    'toggleAlertStatus' : IDL.Func([IDL.Float64], [], []),
+    'setAlertActive' : IDL.Func([IDL.Float64, IDL.Bool], [], []),
     'transform' : IDL.Func(
         [TransformationInput],
         [TransformationOutput],

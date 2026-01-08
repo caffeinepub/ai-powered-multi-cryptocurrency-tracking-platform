@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { ICPPortfolio, PriceAlertStatus } from '@/backend';
+import type { ICPPortfolio, AlertStatus } from '@/backend';
 
 // CoinGecko API types
 interface CoinGeckoPrice {
@@ -62,7 +62,7 @@ export function useICPPrice() {
   });
 }
 
-// Fetch ICP historical data for chart (7 days)
+// Fetch ICP historical data for chart (7 days) with fallback to cached data
 export function useICPHistoricalData() {
   return useQuery<HistoricalDataPoint[]>({
     queryKey: ['icp-historical'],
@@ -79,6 +79,7 @@ export function useICPHistoricalData() {
         price,
       }));
     },
+    placeholderData: (previousData) => previousData, // Keep previous data on error
     refetchInterval: 300000, // Refetch every 5 minutes
     staleTime: 240000,
     retry: 3,
@@ -86,18 +87,19 @@ export function useICPHistoricalData() {
   });
 }
 
-// Fetch top 50 cryptocurrencies from backend
+// Fetch top 50 cryptocurrencies directly from CoinGecko API
 export function useTop50Cryptocurrencies() {
-  const { actor, isFetching } = useActor();
-
   return useQuery<CoinGeckoPrice[]>({
     queryKey: ['top-50-cryptos'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not initialized');
-      const response = await actor.getTopCryptos();
-      return JSON.parse(response);
+      const response = await fetch(
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch top cryptocurrencies');
+      }
+      return response.json();
     },
-    enabled: !!actor && !isFetching,
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 25000,
     retry: 3,
@@ -119,14 +121,15 @@ export function usePortfolioSummary() {
   });
 }
 
+// Fetch price alerts from backend
 export function usePriceAlerts() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<PriceAlertStatus[]>({
+  return useQuery<AlertStatus[]>({
     queryKey: ['price-alerts'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not initialized');
-      const alerts = await actor.getAlerts();
+      const alerts = await actor.getAlertList();
       // Sort by price ascending
       return alerts.sort((a, b) => a.price - b.price);
     },
@@ -135,14 +138,47 @@ export function usePriceAlerts() {
   });
 }
 
+// Toggle alert active status
 export function useToggleAlert() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ price, active }: { price: number; active: boolean }) => {
+      if (!actor) throw new Error('Actor not initialized');
+      await actor.setAlertActive(price, active);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
+    },
+  });
+}
+
+// Add new price alert
+export function useAddAlert() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (price: number) => {
       if (!actor) throw new Error('Actor not initialized');
-      await actor.toggleAlertStatus(price);
+      await actor.setAlertActive(price, true);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
+    },
+  });
+}
+
+// Delete price alert
+export function useDeleteAlert() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (price: number) => {
+      if (!actor) throw new Error('Actor not initialized');
+      await actor.deleteAlert(price);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });

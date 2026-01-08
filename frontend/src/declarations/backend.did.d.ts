@@ -10,8 +10,8 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AlertStatus { 'isActive' : boolean, 'price' : number }
 export interface ICPPortfolio { 'coins' : number, 'avgCost' : number }
-export interface PriceAlertStatus { 'isTriggered' : boolean, 'price' : number }
 export interface TransformationInput {
   'context' : Uint8Array,
   'response' : http_request_result,
@@ -28,11 +28,12 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
-  'getAlerts' : ActorMethod<[], Array<PriceAlertStatus>>,
+  'deleteAlert' : ActorMethod<[number], undefined>,
+  'getAlertList' : ActorMethod<[], Array<AlertStatus>>,
+  'getHistoricalPrices' : ActorMethod<[], Array<number>>,
   'getICPLivePrice' : ActorMethod<[], string>,
   'getPortfolioSummary' : ActorMethod<[], ICPPortfolio>,
-  'getTopCryptos' : ActorMethod<[], string>,
-  'toggleAlertStatus' : ActorMethod<[number], undefined>,
+  'setAlertActive' : ActorMethod<[number, boolean], undefined>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
 }
 export declare const idlService: IDL.ServiceClass;

@@ -13,10 +13,11 @@ import { toast } from 'sonner';
 
 export function ICPTracker() {
   const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
-  const { data: historicalData, error: historicalError } = useICPHistoricalData();
+  const { data: historicalData } = useICPHistoricalData();
   const { data: portfolio, isLoading: isPortfolioLoading } = usePortfolioSummary();
   const { data: alerts } = usePriceAlerts();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+  const [triggeredAlerts, setTriggeredAlerts] = useState<Set<number>>(new Set());
 
   // Calculate 24h price change from historical data
   const priceChange24h = historicalData && currentPrice
@@ -35,14 +36,15 @@ export function ICPTracker() {
   useEffect(() => {
     if (currentPrice && alerts && previousPrice !== null) {
       alerts.forEach((alert) => {
-        if (!alert.isTriggered) {
+        if (alert.isActive && !triggeredAlerts.has(alert.price)) {
           // Check if price crossed the alert threshold
-          if (
-            (previousPrice < alert.price && currentPrice >= alert.price) ||
-            (previousPrice > alert.price && currentPrice <= alert.price)
-          ) {
+          const crossedUp = previousPrice < alert.price && currentPrice >= alert.price;
+          const crossedDown = previousPrice > alert.price && currentPrice <= alert.price;
+          
+          if (crossedUp || crossedDown) {
+            setTriggeredAlerts(prev => new Set(prev).add(alert.price));
             toast.success(`Price Alert Triggered!`, {
-              description: `ICP has reached $${alert.price.toFixed(3)}. Current price: $${currentPrice.toFixed(3)}`,
+              description: `ICP has ${crossedUp ? 'reached' : 'dropped to'} $${alert.price.toFixed(3)}. Current price: $${currentPrice.toFixed(3)}`,
               duration: 10000,
             });
           }
@@ -53,7 +55,23 @@ export function ICPTracker() {
     } else if (currentPrice && previousPrice === null) {
       setPreviousPrice(currentPrice);
     }
-  }, [currentPrice, alerts, previousPrice]);
+  }, [currentPrice, alerts, previousPrice, triggeredAlerts]);
+
+  // Reset triggered alerts when alerts change (e.g., when toggled off/on)
+  useEffect(() => {
+    if (alerts) {
+      setTriggeredAlerts(prev => {
+        const newSet = new Set(prev);
+        // Remove alerts that are no longer active
+        alerts.forEach(alert => {
+          if (!alert.isActive) {
+            newSet.delete(alert.price);
+          }
+        });
+        return newSet;
+      });
+    }
+  }, [alerts]);
 
   if (priceError) {
     return (
@@ -131,16 +149,7 @@ export function ICPTracker() {
       </Card>
 
       {/* Chart */}
-      {historicalError ? (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>Chart data temporarily unavailable.</span>
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <ICPPriceChart />
-      )}
+      <ICPPriceChart />
 
       {/* Portfolio and Alerts */}
       <div className="grid gap-6 md:grid-cols-2">

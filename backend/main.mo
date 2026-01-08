@@ -1,27 +1,30 @@
 import Map "mo:core/Map";
-import Iter "mo:core/Iter";
 import Array "mo:core/Array";
+import Iter "mo:core/Iter";
 import Float "mo:core/Float";
+import Nat "mo:core/Nat";
+import Set "mo:core/Set";
 import OutCall "http-outcalls/outcall";
 import Runtime "mo:core/Runtime";
+import List "mo:core/List";
 import Migration "migration";
 
 (with migration = Migration.run)
 actor {
-  type Alerts = Map.Map<Float, Bool>;
+  // Types
   type ICPPortfolio = {
     coins : Float;
     avgCost : Float;
   };
 
-  var icpPortfolio : ICPPortfolio = {
-    coins = 1864.0;
-    avgCost = 6.152;
+  public type AlertStatus = {
+    price : Float;
+    isActive : Bool;
   };
 
-  type PriceAlertStatus = {
+  public type CandleStick = {
+    timestamp : Nat;
     price : Float;
-    isTriggered : Bool;
   };
 
   public type Coin = {
@@ -31,6 +34,16 @@ actor {
     currentPrice : Float;
     marketCap : ?Float;
     priceChange24h : ?Float;
+  };
+
+  // State
+  let alertsMap = Map.empty<Float, Bool>();
+  let historicalPrices = List.empty<Float>();
+  let timestamps = List.empty<Nat>();
+
+  var icpPortfolio : ICPPortfolio = {
+    coins = 1864.0;
+    avgCost = 6.152;
   };
 
   // 1. Live ICP Price Tracker
@@ -43,24 +56,7 @@ actor {
     let url = "https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd";
     let res = await OutCall.httpGetRequest(url, [], transform);
 
-    if (res.size() >= 2) {
-      res;
-    } else {
-      Runtime.trap("Invalid ICP price response: " # res);
-    };
-  };
-
-  // 2. Top 50 Cryptocurrencies
-
-  public shared ({ caller }) func getTopCryptos() : async Text {
-    let url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false";
-    let res = await OutCall.httpGetRequest(url, [], transform);
-
-    if (res.size() >= 2) {
-      res;
-    } else {
-      Runtime.trap("Invalid top cryptos response: " # res);
-    };
+    if (res.size() >= 2) { res } else { Runtime.trap("Invalid ICP price response: " # res) };
   };
 
   // 3. Portfolio
@@ -70,18 +66,20 @@ actor {
   };
 
   // 4. Price Alerts
-
-  let alerts : Alerts = Map.empty<Float, Bool>();
-
-  public query ({ caller }) func getAlerts() : async [PriceAlertStatus] {
-    alerts.entries().map(func((price, isTriggered)) { { price; isTriggered } }).toArray();
+  public query ({ caller }) func getAlertList() : async [AlertStatus] {
+    alertsMap.entries().map(func((price, active)) { { price; isActive = active } }).toArray();
   };
 
-  public shared ({ caller }) func toggleAlertStatus(price : Float) : async () {
-    let isTriggered = switch (alerts.get(price)) {
-      case (?currentStatus) { not currentStatus };
-      case (null) { true };
-    };
-    alerts.add(price, isTriggered);
+  public shared ({ caller }) func setAlertActive(price : Float, active : Bool) : async () {
+    alertsMap.add(price, active);
+  };
+
+  public shared ({ caller }) func deleteAlert(price : Float) : async () {
+    alertsMap.remove(price);
+  };
+
+  // 5. Historical Price Tracking
+  public query ({ caller }) func getHistoricalPrices() : async [Float] {
+    historicalPrices.toArray();
   };
 };

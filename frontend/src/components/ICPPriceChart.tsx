@@ -1,13 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useICPHistoricalData } from '@/hooks/useQueries';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { useICPHistoricalData, usePriceAlerts } from '@/hooks/useQueries';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { format } from 'date-fns';
-
-const ALERT_PRICES = [3.567, 4.885, 6.152, 9.828];
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 export function ICPPriceChart() {
-  const { data: historicalData, isLoading } = useICPHistoricalData();
+  const { data: historicalData, isLoading, error, refetch, isFetching } = useICPHistoricalData();
+  const { data: alerts } = usePriceAlerts();
 
   if (isLoading) {
     return (
@@ -23,6 +25,38 @@ export function ICPPriceChart() {
     );
   }
 
+  // Show error alert but keep displaying cached data if available
+  const showErrorAlert = error && !historicalData;
+
+  if (showErrorAlert) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>7-Day Price Chart</CardTitle>
+          <CardDescription>Historical price data with alert levels</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Chart data temporarily unavailable. Please try again.</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="ml-4"
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!historicalData || historicalData.length === 0) {
     return null;
   }
@@ -30,8 +64,25 @@ export function ICPPriceChart() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>7-Day Price Chart</CardTitle>
-        <CardDescription>Historical price data with alert levels</CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>7-Day Price Chart</CardTitle>
+            <CardDescription>
+              Historical price data with alert levels
+              {error && <span className="text-yellow-500 ml-2">(Using cached data)</span>}
+            </CardDescription>
+          </div>
+          {error && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
@@ -56,16 +107,17 @@ export function ICPPriceChart() {
               labelFormatter={(value) => format(new Date(value), 'MMM dd, yyyy HH:mm')}
               formatter={(value: number) => [`$${value.toFixed(3)}`, 'Price']}
             />
-            {ALERT_PRICES.map((price) => (
+            {alerts?.map((alert) => (
               <ReferenceLine
-                key={price}
-                y={price}
-                stroke="hsl(var(--destructive))"
+                key={alert.price}
+                y={alert.price}
+                stroke={alert.isActive ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))'}
                 strokeDasharray="3 3"
+                strokeOpacity={alert.isActive ? 1 : 0.3}
                 label={{
-                  value: `$${price}`,
+                  value: `$${alert.price.toFixed(2)}`,
                   position: 'right',
-                  fill: 'hsl(var(--destructive))',
+                  fill: alert.isActive ? 'hsl(var(--destructive))' : 'hsl(var(--muted-foreground))',
                   fontSize: 12,
                 }}
               />

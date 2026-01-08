@@ -93,13 +93,13 @@ export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
 }
-export interface PriceAlertStatus {
-    isTriggered: boolean;
-    price: number;
-}
 export interface ICPPortfolio {
     coins: number;
     avgCost: number;
+}
+export interface AlertStatus {
+    isActive: boolean;
+    price: number;
 }
 export interface TransformationOutput {
     status: bigint;
@@ -116,26 +116,55 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    getAlerts(): Promise<Array<PriceAlertStatus>>;
+    deleteAlert(price: number): Promise<void>;
+    getAlertList(): Promise<Array<AlertStatus>>;
+    getHistoricalPrices(): Promise<Array<number>>;
     getICPLivePrice(): Promise<string>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
-    getTopCryptos(): Promise<string>;
-    toggleAlertStatus(price: number): Promise<void>;
+    setAlertActive(price: number, active: boolean): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
 }
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async getAlerts(): Promise<Array<PriceAlertStatus>> {
+    async deleteAlert(arg0: number): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAlerts();
+                const result = await this.actor.deleteAlert(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAlerts();
+            const result = await this.actor.deleteAlert(arg0);
+            return result;
+        }
+    }
+    async getAlertList(): Promise<Array<AlertStatus>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAlertList();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAlertList();
+            return result;
+        }
+    }
+    async getHistoricalPrices(): Promise<Array<number>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getHistoricalPrices();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getHistoricalPrices();
             return result;
         }
     }
@@ -167,31 +196,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getTopCryptos(): Promise<string> {
+    async setAlertActive(arg0: number, arg1: boolean): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.getTopCryptos();
+                const result = await this.actor.setAlertActive(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getTopCryptos();
-            return result;
-        }
-    }
-    async toggleAlertStatus(arg0: number): Promise<void> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.toggleAlertStatus(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.toggleAlertStatus(arg0);
+            const result = await this.actor.setAlertActive(arg0, arg1);
             return result;
         }
     }

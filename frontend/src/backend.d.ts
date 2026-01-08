@@ -11,13 +11,13 @@ export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
 }
-export interface PriceAlertStatus {
-    isTriggered: boolean;
-    price: number;
-}
 export interface ICPPortfolio {
     coins: number;
     avgCost: number;
+}
+export interface AlertStatus {
+    isActive: boolean;
+    price: number;
 }
 export interface TransformationOutput {
     status: bigint;
@@ -34,10 +34,11 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    getAlerts(): Promise<Array<PriceAlertStatus>>;
+    deleteAlert(price: number): Promise<void>;
+    getAlertList(): Promise<Array<AlertStatus>>;
+    getHistoricalPrices(): Promise<Array<number>>;
     getICPLivePrice(): Promise<string>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
-    getTopCryptos(): Promise<string>;
-    toggleAlertStatus(price: number): Promise<void>;
+    setAlertActive(price: number, active: boolean): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
 }
