@@ -9,8 +9,8 @@ export function Header() {
             <TrendingUp className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">CryptoTrack</h1>
-            <p className="text-xs text-muted-foreground">Real-time Market Data</p>
+            <h1 className="text-xl font-bold tracking-tight">CryptoInvest</h1>
+            <p className="text-xs text-muted-foreground">Investment & Growth Platform</p>
           </div>
         </div>
       </div>

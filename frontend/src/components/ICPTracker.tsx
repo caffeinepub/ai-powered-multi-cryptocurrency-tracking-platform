@@ -14,10 +14,13 @@ import { toast } from 'sonner';
 export function ICPTracker() {
   const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
   const { data: historicalData } = useICPHistoricalData('1d');
-  const { data: alerts } = usePriceAlerts();
+  const { data: alertsData } = usePriceAlerts();
   const { data: dailyHighLow, isLoading: isHighLowLoading } = useDailyHighLow();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [notifiedAlerts, setNotifiedAlerts] = useState<Set<number>>(new Set());
+
+  // Convert alerts from backend format [price, isTriggered] to frontend format
+  const alerts = alertsData?.map(([price, isTriggered]) => ({ price, isTriggered }));
 
   // Calculate 24h price change from historical data
   const priceChange24h = historicalData && currentPrice && historicalData.length > 0

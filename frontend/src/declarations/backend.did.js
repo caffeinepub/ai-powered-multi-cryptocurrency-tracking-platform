@@ -8,14 +8,24 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const PriceAlertStatus = IDL.Record({
-  'isTriggered' : IDL.Bool,
-  'price' : IDL.Float64,
+export const Coin = IDL.Record({
+  'id' : IDL.Text,
+  'currentPrice' : IDL.Float64,
+  'marketCap' : IDL.Opt(IDL.Float64),
+  'name' : IDL.Text,
+  'priceChange24h' : IDL.Opt(IDL.Float64),
+  'symbol' : IDL.Text,
+});
+export const UserRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'user' : IDL.Null,
+  'guest' : IDL.Null,
 });
 export const PriceCache = IDL.Record({
   'timestamp' : IDL.Int,
   'price' : IDL.Float64,
 });
+export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const PriceRange = IDL.Record({
   'low' : IDL.Float64,
   'high' : IDL.Float64,
@@ -24,6 +34,11 @@ export const TimeframeParams = IDL.Record({
   'timeframe' : IDL.Text,
   'intervalNanos' : IDL.Int,
   'priceData' : IDL.Vec(PriceCache),
+});
+export const PortfolioGoal = IDL.Record({
+  'isCompleted' : IDL.Bool,
+  'name' : IDL.Text,
+  'target' : IDL.Float64,
 });
 export const PortfolioSummary = IDL.Record({
   'coins' : IDL.Float64,
@@ -52,8 +67,20 @@ export const TransformationOutput = IDL.Record({
 });
 
 export const idlService = IDL.Service({
-  'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addTopCryptosToCache' : IDL.Func([IDL.Vec(Coin)], [], []),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'createPriceAlert' : IDL.Func([IDL.Float64], [], []),
+  'deletePriceAlert' : IDL.Func([IDL.Float64], [], []),
+  'getAlerts' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Float64, IDL.Bool))],
+      ['query'],
+    ),
   'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
+  'getCachedTopCryptos' : IDL.Func([], [IDL.Vec(Coin)], ['query']),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getDailyHighLowFromCache' : IDL.Func([], [PriceRange], ['query']),
   'getHistoricalDataRange' : IDL.Func(
       [],
@@ -66,10 +93,18 @@ export const idlService = IDL.Service({
       [],
     ),
   'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
+  'getPortfolioGoals' : IDL.Func([], [IDL.Vec(PortfolioGoal)], ['query']),
   'getPortfolioSummary' : IDL.Func([], [PortfolioSummary], ['query']),
   'getResampledPriceHistory' : IDL.Func([IDL.Nat], [IDL.Vec(PriceCache)], []),
-  'getTopCryptos' : IDL.Func([], [IDL.Text], []),
+  'getUserProfile' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(UserProfile)],
+      ['query'],
+    ),
+  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'recordNewICPPrice' : IDL.Func([IDL.Float64], [], []),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'savePortfolioGoals' : IDL.Func([IDL.Vec(PortfolioGoal)], [], []),
   'toggleAlertStatus' : IDL.Func([IDL.Float64], [], []),
   'transform' : IDL.Func(
       [TransformationInput],
@@ -81,19 +116,34 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const PriceAlertStatus = IDL.Record({
-    'isTriggered' : IDL.Bool,
-    'price' : IDL.Float64,
+  const Coin = IDL.Record({
+    'id' : IDL.Text,
+    'currentPrice' : IDL.Float64,
+    'marketCap' : IDL.Opt(IDL.Float64),
+    'name' : IDL.Text,
+    'priceChange24h' : IDL.Opt(IDL.Float64),
+    'symbol' : IDL.Text,
+  });
+  const UserRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'user' : IDL.Null,
+    'guest' : IDL.Null,
   });
   const PriceCache = IDL.Record({
     'timestamp' : IDL.Int,
     'price' : IDL.Float64,
   });
+  const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const PriceRange = IDL.Record({ 'low' : IDL.Float64, 'high' : IDL.Float64 });
   const TimeframeParams = IDL.Record({
     'timeframe' : IDL.Text,
     'intervalNanos' : IDL.Int,
     'priceData' : IDL.Vec(PriceCache),
+  });
+  const PortfolioGoal = IDL.Record({
+    'isCompleted' : IDL.Bool,
+    'name' : IDL.Text,
+    'target' : IDL.Float64,
   });
   const PortfolioSummary = IDL.Record({
     'coins' : IDL.Float64,
@@ -119,8 +169,20 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
-    'getAlerts' : IDL.Func([], [IDL.Vec(PriceAlertStatus)], ['query']),
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addTopCryptosToCache' : IDL.Func([IDL.Vec(Coin)], [], []),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'createPriceAlert' : IDL.Func([IDL.Float64], [], []),
+    'deletePriceAlert' : IDL.Func([IDL.Float64], [], []),
+    'getAlerts' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Float64, IDL.Bool))],
+        ['query'],
+      ),
     'getCachedPriceHistory' : IDL.Func([], [IDL.Vec(PriceCache)], ['query']),
+    'getCachedTopCryptos' : IDL.Func([], [IDL.Vec(Coin)], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getDailyHighLowFromCache' : IDL.Func([], [PriceRange], ['query']),
     'getHistoricalDataRange' : IDL.Func(
         [],
@@ -133,10 +195,18 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'getICPLivePrice' : IDL.Func([], [IDL.Text], []),
+    'getPortfolioGoals' : IDL.Func([], [IDL.Vec(PortfolioGoal)], ['query']),
     'getPortfolioSummary' : IDL.Func([], [PortfolioSummary], ['query']),
     'getResampledPriceHistory' : IDL.Func([IDL.Nat], [IDL.Vec(PriceCache)], []),
-    'getTopCryptos' : IDL.Func([], [IDL.Text], []),
+    'getUserProfile' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(UserProfile)],
+        ['query'],
+      ),
+    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'recordNewICPPrice' : IDL.Func([IDL.Float64], [], []),
+    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'savePortfolioGoals' : IDL.Func([IDL.Vec(PortfolioGoal)], [], []),
     'toggleAlertStatus' : IDL.Func([IDL.Float64], [], []),
     'transform' : IDL.Func(
         [TransformationInput],

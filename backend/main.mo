@@ -8,31 +8,37 @@ import OutCall "http-outcalls/outcall";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
 import Runtime "mo:core/Runtime";
+import Iter "mo:core/Iter";
+import Principal "mo:core/Principal";
+import MixinAuthorization "authorization/MixinAuthorization";
+import AccessControl "authorization/access-control";
 import Migration "migration";
 
 (with migration = Migration.run)
 actor {
+  // Authorization Mixin
+  let accessControlState = AccessControl.initState();
+  include MixinAuthorization(accessControlState);
+
+  type Alerts = Map.Map<Float, Bool>;
   let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
   let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;
-  type Alerts = Map.Map<Float, Bool>;
-
-  type PriceAlertStatus = {
-    price : Float;
-    isTriggered : Bool;
-  };
 
   public type PriceRange = {
     low : Float;
     high : Float;
   };
 
-  type Coin = {
+  type CoinBase = {
     id : Text;
     symbol : Text;
     name : Text;
-    currentPrice : Float;
     marketCap : ?Float;
     priceChange24h : ?Float;
+  };
+
+  type Coin = CoinBase and {
+    currentPrice : Float;
   };
 
   type PriceCache = {
@@ -40,9 +46,7 @@ actor {
     timestamp : Int;
   };
 
-  type ChartPriceCache = {
-    price : Float;
-    timestamp : Int;
+  type ChartPriceCache = PriceCache and {
     open : Float;
     high : Float;
     low : Float;
@@ -59,7 +63,6 @@ actor {
 
   // Alert system
   let alerts : Alerts = Map.empty<Float, Bool>();
-
   let icpPriceHistory = List.empty<PriceCache>();
 
   // Indicator types
@@ -81,25 +84,44 @@ actor {
   };
 
   public shared ({ caller }) func getICPLivePrice() : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access live price data");
+    };
+
     let url = "https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd";
     await OutCall.httpGetRequest(url, [], transform);
   };
 
-  public shared ({ caller }) func getTopCryptos() : async Text {
-    let url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false";
-    await OutCall.httpGetRequest(url, [], transform);
+  public query ({ caller }) func getAlerts() : async [(Float, Bool)] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access alerts");
+    };
+    alerts.toArray();
   };
 
-  public query ({ caller }) func getAlerts() : async [PriceAlertStatus] {
-    let entriesArray = alerts.toArray();
-    entriesArray.map(
-      func((price, isTriggered)) {
-        { price; isTriggered };
-      }
-    );
+  public shared ({ caller }) func createPriceAlert(price : Float) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can create price alerts");
+    };
+    alerts.add(price, false);
+  };
+
+  public shared ({ caller }) func deletePriceAlert(price : Float) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete price alerts");
+    };
+    if (alerts.containsKey(price)) {
+      alerts.remove(price);
+      ();
+    } else {
+      Runtime.trap("Price alert not found");
+    };
   };
 
   public shared ({ caller }) func toggleAlertStatus(price : Float) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can toggle alert status");
+    };
     let currentStatus = switch (alerts.get(price)) {
       case (?status) { not status };
       case (null) { true };
@@ -108,12 +130,18 @@ actor {
   };
 
   public query ({ caller }) func getCachedPriceHistory() : async [PriceCache] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access price history");
+    };
     let currentTime = Time.now();
     let filtered = icpPriceHistory.filter(func(entry) { currentTime - entry.timestamp <= cacheDurationInt });
     filtered.toArray();
   };
 
   public shared ({ caller }) func recordNewICPPrice(price : Float) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can record prices");
+    };
     let newEntry = {
       price;
       timestamp = Time.now() : Int;
@@ -213,6 +241,9 @@ actor {
   };
 
   public query ({ caller }) func getDailyHighLowFromCache() : async PriceRange {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access daily high/low data");
+    };
     var high : Float = 0.0;
     var low : Float = 0.0;
 
@@ -237,6 +268,9 @@ actor {
   };
 
   public shared ({ caller }) func getHistoricalPriceHistory(params : TimeframeParams) : async [PriceCache] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access historical price data");
+    };
     let intervalNs = params.intervalNanos;
     let now = Time.now();
 
@@ -304,6 +338,9 @@ actor {
   };
 
   public shared ({ caller }) func getResampledPriceHistory(intervalNanos : Nat) : async [PriceCache] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access resampled price history");
+    };
     let intervalNs = intervalNanos.toInt();
     let now = Time.now();
     let recentHistory = icpPriceHistory.filter(
@@ -355,6 +392,9 @@ actor {
     start : Int;
     end : Int;
   } {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access historical data range");
+    };
     let entries = icpPriceHistory.toArray();
     if (entries.size() == 0) {
       { start = 0; end = 0 };
@@ -373,6 +413,10 @@ actor {
 
   // Portfolio summary
   public query ({ caller }) func getPortfolioSummary() : async PortfolioSummary {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access portfolio summary");
+    };
+
     let coins = 1864.0;
     let avgCost = 6.152;
     let icpPrice = switch (icpPriceHistory.last()) {
@@ -396,5 +440,86 @@ actor {
       profitLossDollar;
       profitLossPercent;
     };
+  };
+
+  // Top cryptos functions - public market data, no auth required
+  let cachedTopCryptos = List.empty<Coin>();
+
+  func trimCacheToMaxDays(days : Nat) : () {
+    if (cachedTopCryptos.size() > days) {
+      let iter = cachedTopCryptos.values();
+      cachedTopCryptos.clear();
+      cachedTopCryptos.addAll(iter.take(days));
+    };
+  };
+
+  public query ({ caller }) func getCachedTopCryptos() : async [Coin] {
+    // Public market data - no authorization required
+    cachedTopCryptos.toArray();
+  };
+
+  public shared ({ caller }) func addTopCryptosToCache(newTopCryptos : [Coin]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can update crypto cache");
+    };
+    cachedTopCryptos.clear();
+    for (newCoin in newTopCryptos.values()) {
+      cachedTopCryptos.add(newCoin);
+    };
+    trimCacheToMaxDays(30);
+  };
+
+  type PortfolioGoal = {
+    name : Text;
+    target : Float;
+    isCompleted : Bool;
+  };
+
+  let portfolioGoals = List.empty<PortfolioGoal>();
+
+  public query ({ caller }) func getPortfolioGoals() : async [PortfolioGoal] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access portfolio goals");
+    };
+    portfolioGoals.toArray();
+  };
+
+  public shared ({ caller }) func savePortfolioGoals(goals : [PortfolioGoal]) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save portfolio goals");
+    };
+
+    portfolioGoals.clear();
+    for (goal in goals.values()) {
+      portfolioGoals.add(goal);
+    };
+  };
+
+  // User profile management as required by instructions
+  public type UserProfile = {
+    name : Text;
+  };
+
+  let userProfiles = Map.empty<Principal, UserProfile>();
+
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    userProfiles.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user: Principal) : async ?UserProfile {
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
   };
 };

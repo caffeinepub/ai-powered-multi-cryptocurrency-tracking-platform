@@ -140,8 +140,14 @@ export function ICPPriceChart() {
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const { data: historicalData, isLoading, error, refetch, isFetching } = useICPHistoricalData(selectedTimeframe);
-  const { data: alerts } = usePriceAlerts();
+  const { data: alertsData } = usePriceAlerts();
   const { prefetchTimeframe } = usePrefetchTimeframes();
+
+  // Convert alerts from backend format [price, isTriggered] to objects
+  const alerts = useMemo(() => {
+    if (!alertsData) return [];
+    return alertsData.map(([price, isTriggered]) => ({ price, isTriggered }));
+  }, [alertsData]);
 
   // Prefetch adjacent timeframes for smoother transitions
   useEffect(() => {

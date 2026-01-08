@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { PriceAlertStatus, PriceCache, PortfolioSummary, PriceRange } from '@/backend';
+import type { PriceCache, PortfolioSummary, PriceRange } from '@/backend';
 
 // CoinGecko API types
 interface CoinGeckoPrice {
@@ -347,24 +347,27 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
   });
 }
 
-// Fetch top 50 cryptocurrencies from backend with improved error handling
+// Fetch top 50 cryptocurrencies from CoinGecko API
 export function useTop50Cryptocurrencies() {
-  const { actor, isFetching } = useActor();
-
   return useQuery<CoinGeckoPrice[]>({
     queryKey: ['top-50-cryptos'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not initialized');
-      const response = await actor.getTopCryptos();
-      const data = JSON.parse(response);
+      const response = await fetch(
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false'
+      );
+      
+      if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
       
       if (!Array.isArray(data)) {
-        throw new Error('Invalid response format from backend');
+        throw new Error('Invalid response format from CoinGecko');
       }
       
       return data;
     },
-    enabled: !!actor && !isFetching,
     refetchInterval: 30000, // Refetch every 30 seconds
     staleTime: 25000,
     retry: 3,
@@ -375,13 +378,13 @@ export function useTop50Cryptocurrencies() {
 export function usePriceAlerts() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<PriceAlertStatus[]>({
+  return useQuery<Array<[number, boolean]>>({
     queryKey: ['price-alerts'],
     queryFn: async () => {
       if (!actor) throw new Error('Actor not initialized');
       const alerts = await actor.getAlerts();
       // Sort by price ascending
-      return alerts.sort((a, b) => a.price - b.price);
+      return alerts.sort((a, b) => a[0] - b[0]);
     },
     enabled: !!actor && !isFetching,
     refetchInterval: 10000, // Check alerts every 10 seconds
@@ -396,16 +399,7 @@ export function useAddAlert() {
   return useMutation({
     mutationFn: async (price: number) => {
       if (!actor) throw new Error('Actor not initialized');
-      // Check if alert already exists
-      const existingAlerts = await actor.getAlerts();
-      const alertExists = existingAlerts.some(alert => Math.abs(alert.price - price) < 0.001);
-      
-      if (alertExists) {
-        throw new Error('Alert already exists for this price');
-      }
-      
-      // Add new alert by toggling (which creates it if it doesn't exist)
-      await actor.toggleAlertStatus(price);
+      await actor.createPriceAlert(price);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });
@@ -421,23 +415,7 @@ export function useRemoveAlert() {
   return useMutation({
     mutationFn: async (price: number) => {
       if (!actor) throw new Error('Actor not initialized');
-      
-      // Get current alerts
-      const alerts = await actor.getAlerts();
-      const alertToRemove = alerts.find(a => Math.abs(a.price - price) < 0.001);
-      
-      if (!alertToRemove) {
-        throw new Error('Alert not found');
-      }
-      
-      // Toggle to remove (backend should handle removal logic)
-      await actor.toggleAlertStatus(price);
-      
-      // Optimistically update the cache
-      queryClient.setQueryData<PriceAlertStatus[]>(['price-alerts'], (old) => {
-        if (!old) return [];
-        return old.filter(alert => Math.abs(alert.price - price) >= 0.001);
-      });
+      await actor.deletePriceAlert(price);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['price-alerts'] });

@@ -7,12 +7,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAddAlert, useRemoveAlert, useToggleAlert } from '@/hooks/useQueries';
-import { Bell, BellOff, Check, X, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { Bell, BellOff, Check, X, Plus, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import type { PriceAlertStatus } from '@/backend';
+
+interface PriceAlert {
+  price: number;
+  isTriggered: boolean;
+}
 
 interface PriceAlertsCardProps {
-  alerts?: PriceAlertStatus[];
+  alerts?: PriceAlert[];
   currentPrice?: number;
 }
 
@@ -233,6 +237,3 @@ export function PriceAlertsCard({ alerts, currentPrice }: PriceAlertsCardProps) 
     </Card>
   );
 }
-
-// Import RefreshCw for loading state
-import { RefreshCw } from 'lucide-react';

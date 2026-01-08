@@ -1,9 +1,26 @@
-# Cryptocurrency Tracking Platform
+# Cryptocurrency Investment and Growth Application
 
 ## Overview
-A cryptocurrency tracking platform that provides real-time price monitoring for ICP and displays market data for the top 50 cryptocurrencies.
+A comprehensive cryptocurrency investment and growth application that combines portfolio simulation, live investment tracking, and advanced market analysis. The platform provides real-time price monitoring for ICP and displays market data for the top 50 cryptocurrencies, while offering investment planning and growth simulation tools.
 
 ## Core Features
+
+### Portfolio Growth Simulator
+- Simulate portfolio growth from $1,000 starting investment to $10,000 goal
+- Use real historical data from top cryptocurrencies for accurate simulations
+- Apply different market conditions (bull market, bear market, sideways market) to projections
+- Show projected timeline to reach investment goals under various scenarios
+- Display growth charts with different allocation strategies
+- Allow users to adjust simulation parameters (starting amount, target amount, time horizon)
+- Compare performance across different cryptocurrency portfolios
+
+### Investment Recommendations and Alerts System
+- Generate real-time investment recommendations based on technical indicators
+- Use RSI, MACD, and TTM Squeeze for trend and momentum analysis
+- Provide buy/sell/hold recommendations with confidence levels
+- Alert users when favorable investment opportunities arise
+- Show recommendation history and performance tracking
+- Allow users to customize recommendation sensitivity and criteria
 
 ### ICP Live Price Tracker
 - Display a robust dynamic chart showing real-time ICP price changes with continuous updates and reliable data display
@@ -15,63 +32,16 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Hover tooltips for each timeframe describing data density and update frequency
   - Visual feedback for the currently active timeframe with distinct styling
   - Smooth navigation between timeframes with improved responsiveness
-- Implement enhanced chart data system with optimized data fetching and transitions:
-  - Cache comprehensive price history data in backend with proper time-based indexing for all timeframes
-  - High-precision data fetching with minimal lag and consistent historical data alignment
-  - Dynamic resampling and smoothing logic for seamless transitions between distant timeframes
-  - Automatically refresh and resample data based on selected timeframe with precise historical resolution matching
-  - Ensure data refresh logic dynamically matches the selected interval with accurate nanosecond conversions for each timeframe
-  - Backend resampling intervals must be precisely synchronized with frontend timeframe selections using proper nanosecond time calculations
-  - Seamless transitions between different timeframes with consistent updates and improved data consistency
-  - When API endpoints fail, display cached data maintaining chart consistency
-  - Ensure chart always shows meaningful price history with proper time intervals for all 15 timeframe options
-  - Optimize high-frequency data caching for short intervals while maintaining performance
-  - Synchronize chart data refresh and timeframe switching with backend caching for reliable rendering
-  - Align backend caching and resampling mechanism to handle varying data densities across all timeframes
-  - Fix chart timeframe rendering to ensure each interval displays accurate data using cached and live historical data
-  - Improve chart responsiveness with cross-timeframe synchronization and smooth visual transitions between intervals
-- Implement timeframe-specific loading and error states:
-  - Display loading indicators when switching between timeframes
-  - Show specific error messages when timeframe data is unavailable
-  - Provide clear user feedback during data refresh operations
-  - Graceful handling of temporary data unavailability for specific intervals
-- Implement interactive chart hover tooltips:
-  - Display comprehensive details including precise date/time, price, and any active indicator values
-  - Show formatted price values and readable time stamps
-  - Include technical indicator values when indicators are enabled
-  - Improve chart readability and user interaction
-  - Ensure accurate hover tooltips across all timeframes
-- Implement technical indicator system with enhanced timeframe compatibility:
-  - Optional RSI (Relative Strength Index) indicator with toggle on/off functionality
-  - Optional MACD (Moving Average Convergence Divergence) indicator with toggle on/off functionality
-  - Optional TTM Squeeze indicator with toggle on/off functionality
-  - Each indicator calculates and renders correctly based on the selected timeframe with enhanced handling of varying data densities
+- Implement enhanced chart data system with optimized data fetching and transitions
+- Interactive chart hover tooltips displaying comprehensive details including precise date/time, price, and indicator values
+- Technical indicator system with customizable colors:
+  - Optional RSI, MACD, and TTM Squeeze indicators with toggle functionality
+  - Customizable indicator colors for personalized chart visualization
+  - Each indicator calculates and renders correctly based on selected timeframe
   - Interactive controls to enable/disable each indicator independently
-  - Seamless indicator overlay rendering when switching between timeframes
-  - Proper indicator scaling and visualization on the chart with smooth transitions between timeframes
-  - Refined indicator calculations to maintain valid results when switching between short and long intervals
-  - Verify compatibility with existing indicators and ensure they remain accurate when switching timeframes
-- Implement comprehensive price alert system with full manual management:
-  - View all currently active alerts with their status (triggered, pending, inactive)
-  - Add new alerts by entering custom target prices
-  - Remove existing alerts with immediate UI updates
-  - Visual indicators for different alert states
-  - Synchronize alert actions with backend through React Query mutation hooks
-  - Instant UI updates when alerts are added, removed, or status changes
-- Display dynamic 24-hour high and low prices:
-  - Calculate and display current day's high and low based on live ICP price data
-  - Automatically update these values when new price data arrives during the user's session
-  - Show real daily low/high within the current 24-hour timeframe
-  - Maintain clean and consistent visual formatting with the current price display section
-- Show investment portfolio summary with accurate real-time calculations:
-  - Total coins: 1864 ICP
-  - Average cost: $6.152
-  - Current total value (calculated in real-time based on live ICP price)
-  - Current profit/loss percentage and amount (unrealized gains/losses)
-  - ROI visualization with clear formatting
-  - Dynamic updates in real time when ICP price changes
-  - Responsive formatting for both desktop and mobile devices
-  - Clear display of both absolute profit/loss values and percentage changes
+- Comprehensive price alert system with manual management
+- Display dynamic 24-hour high and low prices
+- Show investment portfolio summary with accurate real-time calculations
 
 ### Top 50 Cryptocurrencies Dashboard
 - Display live data for the top 50 cryptocurrencies by market capitalization
@@ -80,152 +50,106 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - 24-hour percentage change
   - Market capitalization
   - Cryptocurrency name and symbol
-- Implement column filtering functionality:
-  - Filter by Name with text input
-  - Filter by Symbol with text input
-  - Filter by Price with range or comparison inputs
-  - Filter by 24h Change with range or comparison inputs
-  - Filter by Market Cap with range or comparison inputs
+- Implement column filtering and sorting functionality:
+  - Filter by Name, Symbol, Price, 24h Change, and Market Cap
+  - Sort by any column in ascending or descending order
   - User-friendly filter inputs positioned above or within column headers
 - Automatically refresh data at regular intervals to maintain accuracy
+
+### Personalized Investment Planner
+- Help users allocate funds across different cryptocurrencies
+- Monitor portfolio performance with detailed analytics
+- Show profitability projections based on historical data and market trends
+- Provide diversification recommendations
+- Track investment goals and progress
+- Calculate optimal allocation percentages based on risk tolerance
+- Display expected returns and risk metrics for different allocation strategies
+
+### Portfolio Summary
+- Display user's real holdings with comprehensive metrics:
+  - Total coins: 1864 ICP
+  - Average cost: $6.152
+  - Current total value (calculated in real-time based on live ICP price)
+  - Current profit/loss percentage and amount (unrealized gains/losses)
+  - ROI visualization with clear formatting
+- Dynamic updates in real time when ICP price changes
+- Responsive formatting for both desktop and mobile devices
+- Clear display of both absolute profit/loss values and percentage changes
 
 ## Technical Requirements
 
 ### Frontend
-- Clean, modern React user interface
+- Clean, modern React user interface optimized for clarity and responsiveness
 - Responsive design that works on desktop and mobile devices
 - Interactive price charts for ICP visualization with enhanced timeframe selection controls
-- Enhanced timeframe selector UI with improved visual design:
-  - Clear labeling for all 15 timeframe options
-  - Hover tooltips describing data density and update frequency for each interval
-  - Visual feedback for active timeframe with distinct styling and smooth transitions
-  - Improved navigation between timeframes with better responsiveness
-- Optimized data-fetching logic in useQueries.ts:
-  - High-precision data fetching with minimal lag
-  - Consistent historical data alignment for each timeframe
-  - Dynamic resampling and smoothing for seamless transitions between distant timeframes
-  - Enhanced chart responsiveness and accuracy
-- Timeframe-specific loading and error states:
-  - Loading indicators when switching between timeframes
-  - Specific error messages for timeframe data unavailability
-  - Clear user feedback during data refresh operations
-- Enhanced charting logic to dynamically load and update historical price data for each timeframe with improved responsiveness
-- Precise automatic chart refresh and data resampling matching selected timeframe intervals
-- Seamless transitions between different chart timeframes with consistent data updates and reduced load times
-- Enhanced fallback data display with proper time-based intervals
-- Interactive hover tooltips on charts showing comprehensive data including date/time, price, and indicator values
-- Technical indicator controls with enhanced timeframe compatibility:
-  - Toggle functionality for RSI, MACD, and TTM Squeeze
-  - Seamless indicator overlay rendering when switching between timeframes
-  - Proper indicator calculation and rendering based on selected timeframe with refined handling of varying data densities
-- Robust synchronization layer using enhanced useQueries hook to prefetch and cache data for multiple timeframes
-- Dynamic 24-hour high/low calculation and display:
-  - Track and calculate current day's high and low prices from live price data
-  - Update high/low values automatically when new price data is received
-  - Display values with consistent formatting alongside current price information
+- Customizable indicator colors for technical analysis tools
+- Portfolio growth simulation interface with interactive charts and parameter controls
+- Investment recommendation dashboard with real-time alerts and historical tracking
+- Investment planner interface with allocation tools and performance projections
 - Sortable and filterable table for top 50 cryptocurrencies with column-specific filters
 - Real-time data updates without page refresh
-- Comprehensive price alert management interface:
-  - Form to add new price alerts with validation
-  - Complete list view of all active alerts with status indicators
-  - Delete functionality for existing alerts with confirmation
-  - Visual states for triggered, pending, and inactive alerts
-  - Manual alert management with full CRUD operations
-- React Query integration with mutation hooks for alert management:
-  - Instant UI updates when alerts are modified
-  - Automatic revalidation of alert data
-  - Synchronization with backend `toggleAlertStatus` and `getAlerts` functions
-- Enhanced error handling with graceful recovery:
-  - Display retry button when network errors occur
-  - Show "Data temporarily unavailable" message instead of generic connection errors
-  - Provide clear feedback when API calls fail
-  - Graceful recovery from temporary API or connection issues on both chart and table components
+- Comprehensive price alert management interface
+- React Query integration with mutation hooks for all data management
+- Enhanced error handling with graceful recovery
 - Call backend endpoints instead of external APIs directly
-- Portfolio Summary component with real-time investment calculations:
-  - Display total coins, average cost, current value, and profit/loss metrics
-  - Real-time updates when ICP price changes
-  - Responsive design for desktop and mobile
-  - Clear visual indicators for gains/losses with appropriate color coding
+- Portfolio Summary component with real-time investment calculations
 
 ### Backend
-- Store user's ICP investment data (1864 coins, $6.152 average cost)
-- Store and manage price alerts with enhanced functionality:
-  - Create new price alerts with custom target prices
-  - Delete existing price alerts
-  - Toggle alert status (triggered, pending, inactive)
-  - Provide comprehensive endpoints for alert CRUD operations
-  - Implement `toggleAlertStatus` and `getAlerts` functions for frontend integration
-- Implement optimized price data caching and fallback system with enhanced timeframe support:
-  - Cache comprehensive ICP price history data with proper time-based indexing for all timeframes
-  - Enhanced data precision and alignment for seamless timeframe transitions
-  - Optimized resampling algorithms for smooth data transitions between distant timeframes
-  - Maintain high-frequency data points for short intervals (1-minute through 6-hour) with performance optimization
-  - Provide reliable fallback data when external APIs fail
-  - Ensure chart consistency by maintaining recent price entries with accurate historical resolution
-  - Support precise data resampling matching timeframe requirements with accurate nanosecond conversions for each interval
-  - Enhanced `getResampledPriceHistory` function with improved backend caching and resampling mechanism
-  - Optimize caching strategy to handle high-frequency data while maintaining performance and data consistency
-  - Synchronize caching with frontend chart refresh and timeframe switching for improved responsiveness
-  - Fix backend data provision to ensure accurate historical data for all 15 timeframe options
-- Track and provide 24-hour high/low price data:
-  - Calculate current day's high and low prices from cached price data
-  - Provide endpoint to retrieve current 24-hour high/low values
-  - Update high/low calculations as new price data is received
-  - Ensure accurate 24-hour timeframe calculations based on current time
-- Calculate technical indicators for chart display with enhanced timeframe compatibility:
-  - RSI calculation based on selected timeframe data with enhanced handling of varying data densities
-  - MACD calculation with proper signal and histogram values across different timeframes
-  - TTM Squeeze calculation with appropriate squeeze detection for all intervals
-  - Provide indicator data endpoints that match the selected chart timeframe with smooth transitions
-  - Ensure indicator accuracy and proper scaling when switching between timeframes
-- Fetch live ICP price data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd`)
-- Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
+- Store user's ICP investment data and portfolio allocations
+- Store and manage price alerts with enhanced functionality
+- Store investment recommendations and their performance history
+- Store portfolio simulation parameters and results
+- Store investment planner data including allocation strategies and goals
+- Implement optimized price data caching and fallback system with enhanced timeframe support
+- Track and provide 24-hour high/low price data
+- Calculate technical indicators for chart display with enhanced timeframe compatibility
+- Generate investment recommendations based on technical analysis
+- Perform portfolio growth simulations using historical data
+- Calculate investment planner projections and allocation recommendations
+- Fetch live ICP price data from CoinGecko API using HTTP outcalls
+- Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls
+- Fetch historical data for multiple cryptocurrencies for simulation purposes
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
 - Provide endpoints for:
-  - Current ICP price and comprehensive historical data with precise time-based intervals
-  - Current 24-hour high and low prices
-  - Chart data for all supported timeframes with enhanced resampling and fallback support
-  - Technical indicator data (RSI, MACD, TTM Squeeze) calculated for the selected timeframe with enhanced data density handling
+  - Current ICP price and comprehensive historical data
+  - Portfolio simulation results and projections
+  - Investment recommendations and alerts
+  - Investment planner calculations and allocations
+  - Chart data for all supported timeframes
+  - Technical indicator data with customizable parameters
   - Top 50 cryptocurrencies market data
   - Investment portfolio calculations with real-time profit/loss metrics
-  - Complete price alert management with status synchronization
-- Portfolio calculation endpoints:
-  - Calculate current portfolio value based on live ICP price
-  - Calculate unrealized profit/loss (both absolute and percentage)
-  - Provide ROI calculations for frontend display
+  - Complete price alert management
 
 ### Data Management
-- Backend stores investment portfolio information
+- Backend stores investment portfolio information and allocation strategies
 - Backend stores price alert configurations with comprehensive status tracking
-- Backend caches extensive price data with optimized time-based indexing for reliable chart display and improved synchronization
+- Backend stores investment recommendations and their historical performance
+- Backend stores portfolio simulation data and results
+- Backend stores investment planner configurations and projections
+- Backend caches extensive price data with optimized time-based indexing
 - Backend tracks and calculates 24-hour high/low prices from cached price data
 - Backend fetches real-time price data from CoinGecko API via HTTP outcalls
-- Comprehensive historical price data for all chart timeframes with cached fallbacks and precise resolution matching using accurate nanosecond conversions
-- Enhanced data precision and resampling algorithms for smooth timeframe transitions
-- Clean data transformation from external API responses to frontend-consumable format
-- Proper maintenance of high-frequency price history for accurate short-interval charts with enhanced data consistency
-- Technical indicator calculations stored and served based on timeframe requirements with refined handling of varying data densities
-- Real-time portfolio value calculations based on current ICP price and stored investment data
+- Backend fetches historical data for multiple cryptocurrencies for simulation and analysis
+- Comprehensive historical price data for all chart timeframes with cached fallbacks
+- Technical indicator calculations stored and served based on timeframe requirements
+- Real-time portfolio value calculations based on current prices and stored investment data
 
 ## User Interface
-- Two main sections: ICP tracker and top 50 dashboard
-- Navigation between different views
-- Responsive charts with enhanced timeframe selection controls and reliable data display with improved load times
-- Enhanced timeframe selector UI with clear labeling, hover tooltips, and visual feedback for active timeframe
-- Timeframe-specific loading and error states with clear user feedback
-- Interactive hover tooltips on charts showing comprehensive information including indicator values
-- Technical indicator toggle controls for RSI, MACD, and TTM Squeeze with seamless timeframe compatibility
-- Dynamic 24-hour high/low display with clean formatting consistent with current price display styling
-- Enhanced price alert management section with full manual control and intuitive interface
-- Filterable table interface for top 50 cryptocurrencies with column-specific filters
-- Clean typography and modern styling
+- Multiple main sections: ICP tracker, top 50 dashboard, portfolio simulator, investment recommendations, and investment planner
+- Navigation between different views with clear section indicators
+- Responsive charts with enhanced timeframe selection controls and customizable indicator colors
+- Interactive hover tooltips on charts showing comprehensive information
+- Technical indicator toggle controls with color customization options
+- Portfolio growth simulation interface with interactive parameter controls
+- Investment recommendation dashboard with alert management
+- Investment planner with allocation tools and performance projections
+- Dynamic 24-hour high/low display with clean formatting
+- Enhanced price alert management section with full manual control
+- Filterable and sortable table interface for top 50 cryptocurrencies
+- Clean typography and modern styling optimized for clarity
 - Color coding for price changes (green for gains, red for losses)
-- Visual indicators for alert states (different colors/icons for triggered, pending, inactive)
+- Visual indicators for alert states and recommendation confidence levels
 - Improved error states with actionable user feedback and graceful recovery
-- Seamless chart transitions between timeframes with consistent data updates and enhanced responsiveness
-- Portfolio Summary section with clear, responsive formatting:
-  - Investment overview displaying coins owned, average cost, current value
-  - Real-time profit/loss calculations with percentage and absolute values
-  - ROI visualization with appropriate color coding
-  - Responsive design for desktop and mobile devices
+- Portfolio Summary section with clear, responsive formatting
 - Application content displayed in English

@@ -89,9 +89,22 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface http_request_result {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
 export interface PriceCache {
     timestamp: bigint;
     price: number;
+}
+export interface Coin {
+    id: string;
+    currentPrice: number;
+    marketCap?: number;
+    name: string;
+    priceChange24h?: number;
+    symbol: string;
 }
 export interface TransformationOutput {
     status: bigint;
@@ -118,22 +131,34 @@ export interface PortfolioSummary {
     currentValue: number;
     profitLossPercent: number;
 }
-export interface PriceAlertStatus {
-    isTriggered: boolean;
-    price: number;
+export interface PortfolioGoal {
+    isCompleted: boolean;
+    name: string;
+    target: number;
+}
+export interface UserProfile {
+    name: string;
 }
 export interface http_header {
     value: string;
     name: string;
 }
-export interface http_request_result {
-    status: bigint;
-    body: Uint8Array;
-    headers: Array<http_header>;
+export enum UserRole {
+    admin = "admin",
+    user = "user",
+    guest = "guest"
 }
 export interface backendInterface {
-    getAlerts(): Promise<Array<PriceAlertStatus>>;
+    _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    addTopCryptosToCache(newTopCryptos: Array<Coin>): Promise<void>;
+    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    createPriceAlert(price: number): Promise<void>;
+    deletePriceAlert(price: number): Promise<void>;
+    getAlerts(): Promise<Array<[number, boolean]>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
+    getCachedTopCryptos(): Promise<Array<Coin>>;
+    getCallerUserProfile(): Promise<UserProfile | null>;
+    getCallerUserRole(): Promise<UserRole>;
     getDailyHighLowFromCache(): Promise<PriceRange>;
     getHistoricalDataRange(): Promise<{
         end: bigint;
@@ -141,16 +166,91 @@ export interface backendInterface {
     }>;
     getHistoricalPriceHistory(params: TimeframeParams): Promise<Array<PriceCache>>;
     getICPLivePrice(): Promise<string>;
+    getPortfolioGoals(): Promise<Array<PortfolioGoal>>;
     getPortfolioSummary(): Promise<PortfolioSummary>;
     getResampledPriceHistory(intervalNanos: bigint): Promise<Array<PriceCache>>;
-    getTopCryptos(): Promise<string>;
+    getUserProfile(user: Principal): Promise<UserProfile | null>;
+    isCallerAdmin(): Promise<boolean>;
     recordNewICPPrice(price: number): Promise<void>;
+    saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    savePortfolioGoals(goals: Array<PortfolioGoal>): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
 }
+import type { Coin as _Coin, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async getAlerts(): Promise<Array<PriceAlertStatus>> {
+    async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._initializeAccessControlWithSecret(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            return result;
+        }
+    }
+    async addTopCryptosToCache(arg0: Array<Coin>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addTopCryptosToCache(to_candid_vec_n1(this.uploadFile, this.downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addTopCryptosToCache(to_candid_vec_n1(this.uploadFile, this.downloadFile, arg0));
+            return result;
+        }
+    }
+    async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n4(this.uploadFile, this.downloadFile, arg1));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n4(this.uploadFile, this.downloadFile, arg1));
+            return result;
+        }
+    }
+    async createPriceAlert(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createPriceAlert(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createPriceAlert(arg0);
+            return result;
+        }
+    }
+    async deletePriceAlert(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deletePriceAlert(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deletePriceAlert(arg0);
+            return result;
+        }
+    }
+    async getAlerts(): Promise<Array<[number, boolean]>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getAlerts();
@@ -176,6 +276,48 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getCachedPriceHistory();
             return result;
+        }
+    }
+    async getCachedTopCryptos(): Promise<Array<Coin>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCachedTopCryptos();
+                return from_candid_vec_n6(this.uploadFile, this.downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCachedTopCryptos();
+            return from_candid_vec_n6(this.uploadFile, this.downloadFile, result);
+        }
+    }
+    async getCallerUserProfile(): Promise<UserProfile | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerUserProfile();
+                return from_candid_opt_n10(this.uploadFile, this.downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerUserProfile();
+            return from_candid_opt_n10(this.uploadFile, this.downloadFile, result);
+        }
+    }
+    async getCallerUserRole(): Promise<UserRole> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerUserRole();
+                return from_candid_UserRole_n11(this.uploadFile, this.downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerUserRole();
+            return from_candid_UserRole_n11(this.uploadFile, this.downloadFile, result);
         }
     }
     async getDailyHighLowFromCache(): Promise<PriceRange> {
@@ -237,6 +379,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getPortfolioGoals(): Promise<Array<PortfolioGoal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPortfolioGoals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPortfolioGoals();
+            return result;
+        }
+    }
     async getPortfolioSummary(): Promise<PortfolioSummary> {
         if (this.processError) {
             try {
@@ -265,17 +421,31 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getTopCryptos(): Promise<string> {
+    async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getTopCryptos();
+                const result = await this.actor.getUserProfile(arg0);
+                return from_candid_opt_n10(this.uploadFile, this.downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUserProfile(arg0);
+            return from_candid_opt_n10(this.uploadFile, this.downloadFile, result);
+        }
+    }
+    async isCallerAdmin(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isCallerAdmin();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getTopCryptos();
+            const result = await this.actor.isCallerAdmin();
             return result;
         }
     }
@@ -290,6 +460,34 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.recordNewICPPrice(arg0);
+            return result;
+        }
+    }
+    async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveCallerUserProfile(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async savePortfolioGoals(arg0: Array<PortfolioGoal>): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.savePortfolioGoals(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.savePortfolioGoals(arg0);
             return result;
         }
     }
@@ -321,6 +519,102 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+}
+function from_candid_Coin_n7(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Coin): Coin {
+    return from_candid_record_n8(uploadFile, downloadFile, value);
+}
+function from_candid_UserRole_n11(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n12(uploadFile, downloadFile, value);
+}
+function from_candid_opt_n10(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n9(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [number]): number | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n8(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    currentPrice: number;
+    marketCap: [] | [number];
+    name: string;
+    priceChange24h: [] | [number];
+    symbol: string;
+}): {
+    id: string;
+    currentPrice: number;
+    marketCap?: number;
+    name: string;
+    priceChange24h?: number;
+    symbol: string;
+} {
+    return {
+        id: value.id,
+        currentPrice: value.currentPrice,
+        marketCap: record_opt_to_undefined(from_candid_opt_n9(uploadFile, downloadFile, value.marketCap)),
+        name: value.name,
+        priceChange24h: record_opt_to_undefined(from_candid_opt_n9(uploadFile, downloadFile, value.priceChange24h)),
+        symbol: value.symbol
+    };
+}
+function from_candid_variant_n12(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+}): UserRole {
+    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+}
+function from_candid_vec_n6(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Coin>): Array<Coin> {
+    return value.map((x)=>from_candid_Coin_n7(uploadFile, downloadFile, x));
+}
+function to_candid_Coin_n2(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Coin): _Coin {
+    return to_candid_record_n3(uploadFile, downloadFile, value);
+}
+function to_candid_UserRole_n4(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
+    return to_candid_variant_n5(uploadFile, downloadFile, value);
+}
+function to_candid_record_n3(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    currentPrice: number;
+    marketCap?: number;
+    name: string;
+    priceChange24h?: number;
+    symbol: string;
+}): {
+    id: string;
+    currentPrice: number;
+    marketCap: [] | [number];
+    name: string;
+    priceChange24h: [] | [number];
+    symbol: string;
+} {
+    return {
+        id: value.id,
+        currentPrice: value.currentPrice,
+        marketCap: value.marketCap ? candid_some(value.marketCap) : candid_none(),
+        name: value.name,
+        priceChange24h: value.priceChange24h ? candid_some(value.priceChange24h) : candid_none(),
+        symbol: value.symbol
+    };
+}
+function to_candid_variant_n5(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+} {
+    return value == UserRole.admin ? {
+        admin: null
+    } : value == UserRole.user ? {
+        user: null
+    } : value == UserRole.guest ? {
+        guest: null
+    } : value;
+}
+function to_candid_vec_n1(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<Coin>): Array<_Coin> {
+    return value.map((x)=>to_candid_Coin_n2(uploadFile, downloadFile, x));
 }
 export interface CreateActorOptions {
     agent?: Agent;

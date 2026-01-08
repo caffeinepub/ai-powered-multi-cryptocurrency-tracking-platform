@@ -10,6 +10,19 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface Coin {
+  'id' : string,
+  'currentPrice' : number,
+  'marketCap' : [] | [number],
+  'name' : string,
+  'priceChange24h' : [] | [number],
+  'symbol' : string,
+}
+export interface PortfolioGoal {
+  'isCompleted' : boolean,
+  'name' : string,
+  'target' : number,
+}
 export interface PortfolioSummary {
   'coins' : number,
   'profitLossDollar' : number,
@@ -17,7 +30,6 @@ export interface PortfolioSummary {
   'currentValue' : number,
   'profitLossPercent' : number,
 }
-export interface PriceAlertStatus { 'isTriggered' : boolean, 'price' : number }
 export interface PriceCache { 'timestamp' : bigint, 'price' : number }
 export interface PriceRange { 'low' : number, 'high' : number }
 export interface TimeframeParams {
@@ -34,6 +46,10 @@ export interface TransformationOutput {
   'body' : Uint8Array,
   'headers' : Array<http_header>,
 }
+export interface UserProfile { 'name' : string }
+export type UserRole = { 'admin' : null } |
+  { 'user' : null } |
+  { 'guest' : null };
 export interface http_header { 'value' : string, 'name' : string }
 export interface http_request_result {
   'status' : bigint,
@@ -41,8 +57,16 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
-  'getAlerts' : ActorMethod<[], Array<PriceAlertStatus>>,
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addTopCryptosToCache' : ActorMethod<[Array<Coin>], undefined>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'createPriceAlert' : ActorMethod<[number], undefined>,
+  'deletePriceAlert' : ActorMethod<[number], undefined>,
+  'getAlerts' : ActorMethod<[], Array<[number, boolean]>>,
   'getCachedPriceHistory' : ActorMethod<[], Array<PriceCache>>,
+  'getCachedTopCryptos' : ActorMethod<[], Array<Coin>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDailyHighLowFromCache' : ActorMethod<[], PriceRange>,
   'getHistoricalDataRange' : ActorMethod<
     [],
@@ -53,10 +77,14 @@ export interface _SERVICE {
     Array<PriceCache>
   >,
   'getICPLivePrice' : ActorMethod<[], string>,
+  'getPortfolioGoals' : ActorMethod<[], Array<PortfolioGoal>>,
   'getPortfolioSummary' : ActorMethod<[], PortfolioSummary>,
   'getResampledPriceHistory' : ActorMethod<[bigint], Array<PriceCache>>,
-  'getTopCryptos' : ActorMethod<[], string>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
   'recordNewICPPrice' : ActorMethod<[number], undefined>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'savePortfolioGoals' : ActorMethod<[Array<PortfolioGoal>], undefined>,
   'toggleAlertStatus' : ActorMethod<[number], undefined>,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
 }
