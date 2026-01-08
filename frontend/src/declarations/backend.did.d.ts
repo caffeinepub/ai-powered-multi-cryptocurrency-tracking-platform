@@ -13,6 +13,7 @@ import type { Principal } from '@icp-sdk/core/principal';
 export interface ICPPortfolio { 'coins' : number, 'avgCost' : number }
 export interface PriceAlertStatus { 'isTriggered' : boolean, 'price' : number }
 export interface PriceCache { 'timestamp' : bigint, 'price' : number }
+export interface Timeframe { 'name' : string, 'intervalMinutes' : bigint }
 export interface TransformationInput {
   'context' : Uint8Array,
   'response' : http_request_result,
@@ -29,15 +30,16 @@ export interface http_request_result {
   'headers' : Array<http_header>,
 }
 export interface _SERVICE {
-  'addPriceToCache' : ActorMethod<[number], undefined>,
+  'cachePrice' : ActorMethod<[number], undefined>,
   'getAlerts' : ActorMethod<[], Array<PriceAlertStatus>>,
   'getCachedPriceHistory' : ActorMethod<[], Array<PriceCache>>,
   'getCurrentPortfolioValue' : ActorMethod<[], number>,
   'getICPLivePrice' : ActorMethod<[], string>,
   'getLastCachedPrice' : ActorMethod<[], [] | [number]>,
   'getPortfolioSummary' : ActorMethod<[], ICPPortfolio>,
-  'getPriceHistoryForHours' : ActorMethod<[bigint], Array<PriceCache>>,
+  'getPriceHistoryForTimeframe' : ActorMethod<[string], Array<PriceCache>>,
   'getResampledPriceHistory' : ActorMethod<[bigint], Array<PriceCache>>,
+  'getTimeframes' : ActorMethod<[], Array<Timeframe>>,
   'getTopCryptos' : ActorMethod<[], string>,
   'recordNewICPPrice' : ActorMethod<[number], undefined>,
   'toggleAlertStatus' : ActorMethod<[number], undefined>,

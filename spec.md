@@ -11,17 +11,27 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Short-term intervals: 1-minute, 2-minute, 3-minute, 5-minute, 10-minute, 15-minute, 30-minute
   - Medium-term intervals: 1-hour, 2-hour, 4-hour, 6-hour
   - Long-term intervals: 1-day, 1-month, 1-quarter, 1-year
-- Implement enhanced chart data system with precise time-based intervals and fallback mechanisms:
-  - Cache comprehensive price history data in backend with proper time-based indexing
-  - Automatically refresh and resample data based on selected timeframe with refined time resampling query logic
+- Implement enhanced chart data system with precise time-based intervals and accurate resampling:
+  - Cache comprehensive price history data in backend with proper time-based indexing for all timeframes
+  - Automatically refresh and resample data based on selected timeframe with precise historical resolution matching
+  - Ensure data refresh logic dynamically matches the selected interval (1-minute data for 1-minute charts, etc.)
   - Seamless transitions between different timeframes with consistent updates
   - When API endpoints fail, display cached data maintaining chart consistency
   - Ensure chart always shows meaningful price history with proper time intervals for all 15 timeframe options
+  - Optimize high-frequency data caching for short intervals while maintaining performance
   - Synchronize chart data refresh and timeframe switching with backend caching for reliable rendering
 - Implement interactive chart hover tooltips:
-  - Display precise price and timestamp information at any point on the chart
+  - Display comprehensive details including precise date/time, price, and any active indicator values
   - Show formatted price values and readable time stamps
+  - Include technical indicator values when indicators are enabled
   - Improve chart readability and user interaction
+- Implement technical indicator system with interactive controls:
+  - Optional RSI (Relative Strength Index) indicator with toggle on/off functionality
+  - Optional MACD (Moving Average Convergence Divergence) indicator with toggle on/off functionality
+  - Optional TTM Squeeze indicator with toggle on/off functionality
+  - Each indicator calculates and renders correctly based on the selected timeframe
+  - Interactive controls to enable/disable each indicator independently
+  - Proper indicator scaling and visualization on the chart
 - Implement comprehensive price alert system with full manual management:
   - View all currently active alerts with their status (triggered, pending, inactive)
   - Add new alerts by entering custom target prices
@@ -57,10 +67,12 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 - Clean, modern React user interface
 - Responsive design that works on desktop and mobile devices
 - Interactive price charts for ICP visualization with comprehensive timeframe selection
-- Refined automatic chart refresh and data resampling based on selected timeframe
+- Precise automatic chart refresh and data resampling matching selected timeframe intervals
 - Seamless transitions between different chart timeframes with consistent data updates
 - Enhanced fallback data display with proper time-based intervals
-- Interactive hover tooltips on charts showing precise price and timestamp data
+- Interactive hover tooltips on charts showing comprehensive data including date/time, price, and indicator values
+- Technical indicator controls with toggle functionality for RSI, MACD, and TTM Squeeze
+- Proper indicator calculation and rendering based on selected timeframe
 - Sortable and filterable table for top 50 cryptocurrencies with column-specific filters
 - Real-time data updates without page refresh
 - Comprehensive price alert management interface:
@@ -88,19 +100,26 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
   - Toggle alert status (triggered, pending, inactive)
   - Provide comprehensive endpoints for alert CRUD operations
   - Implement `toggleAlertStatus` and `getAlerts` functions for frontend integration
-- Implement robust price data caching and fallback system:
-  - Cache comprehensive ICP price history data with precise time-based indexing
-  - Maintain `icpPriceHistory` with proper time intervals for all supported timeframes
+- Implement optimized price data caching and fallback system:
+  - Cache comprehensive ICP price history data with precise time-based indexing for all timeframes
+  - Maintain high-frequency data points for short intervals (1-minute through 6-hour) with performance optimization
   - Provide reliable fallback data when external APIs fail
-  - Ensure chart consistency by maintaining recent price entries
-  - Support refined data resampling for different timeframe requirements with improved query logic
+  - Ensure chart consistency by maintaining recent price entries with accurate historical resolution
+  - Support precise data resampling matching timeframe requirements (1-minute data for 1-minute charts, etc.)
+  - Optimize caching strategy to handle high-frequency data while maintaining performance
   - Synchronize caching with frontend chart refresh and timeframe switching
+- Calculate technical indicators for chart display:
+  - RSI calculation based on selected timeframe data
+  - MACD calculation with proper signal and histogram values
+  - TTM Squeeze calculation with appropriate squeeze detection
+  - Provide indicator data endpoints that match the selected chart timeframe
 - Fetch live ICP price data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd`)
 - Fetch top 50 cryptocurrencies data from CoinGecko API using HTTP outcalls (`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false`)
 - Decode JSON responses from external APIs and expose clean Motoko endpoints
 - Provide endpoints for:
-  - Current ICP price and comprehensive historical data with time-based intervals
-  - Chart data for all supported timeframes with fallback support and refined resampling
+  - Current ICP price and comprehensive historical data with precise time-based intervals
+  - Chart data for all supported timeframes with accurate resampling and fallback support
+  - Technical indicator data (RSI, MACD, TTM Squeeze) calculated for the selected timeframe
   - Top 50 cryptocurrencies market data
   - Investment portfolio calculations
   - Complete price alert management with status synchronization
@@ -108,17 +127,19 @@ A cryptocurrency tracking platform that provides real-time price monitoring for 
 ### Data Management
 - Backend stores investment portfolio information
 - Backend stores price alert configurations with comprehensive status tracking
-- Backend caches extensive price data with time-based indexing for reliable chart display
+- Backend caches extensive price data with optimized time-based indexing for reliable chart display
 - Backend fetches real-time price data from CoinGecko API via HTTP outcalls
-- Comprehensive historical price data for all chart timeframes with cached fallbacks
+- Comprehensive historical price data for all chart timeframes with cached fallbacks and precise resolution matching
 - Clean data transformation from external API responses to frontend-consumable format
-- Proper maintenance of `icpPriceHistory` for chart consistency with refined resampling logic
+- Proper maintenance of high-frequency price history for accurate short-interval charts
+- Technical indicator calculations stored and served based on timeframe requirements
 
 ## User Interface
 - Two main sections: ICP tracker and top 50 dashboard
 - Navigation between different views
 - Responsive charts with comprehensive timeframe selection and reliable data display
-- Interactive hover tooltips on charts for precise data point information
+- Interactive hover tooltips on charts showing comprehensive information including indicator values
+- Technical indicator toggle controls for RSI, MACD, and TTM Squeeze with proper chart integration
 - Enhanced price alert management section with full manual control and intuitive interface
 - Filterable table interface for top 50 cryptocurrencies with column-specific filters
 - Clean typography and modern styling

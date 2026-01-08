@@ -28,6 +28,10 @@ export interface PriceAlertStatus {
     isTriggered: boolean;
     price: number;
 }
+export interface Timeframe {
+    name: string;
+    intervalMinutes: bigint;
+}
 export interface http_header {
     value: string;
     name: string;
@@ -38,15 +42,16 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    addPriceToCache(price: number): Promise<void>;
+    cachePrice(price: number): Promise<void>;
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
     getCurrentPortfolioValue(): Promise<number>;
     getICPLivePrice(): Promise<string>;
     getLastCachedPrice(): Promise<number | null>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
-    getPriceHistoryForHours(hours: bigint): Promise<Array<PriceCache>>;
+    getPriceHistoryForTimeframe(name: string): Promise<Array<PriceCache>>;
     getResampledPriceHistory(intervalMinutes: bigint): Promise<Array<PriceCache>>;
+    getTimeframes(): Promise<Array<Timeframe>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;

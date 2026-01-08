@@ -105,7 +105,7 @@ function resampleData(data: HistoricalDataPoint[], intervalMinutes: number): His
   return resampled;
 }
 
-// Get interval configuration for timeframe with improved settings
+// Get interval configuration for timeframe with improved settings for short intervals
 function getTimeframeConfig(timeframe: TimeframeOption): { 
   intervalMinutes: number; 
   daysBack: number; 
@@ -118,26 +118,26 @@ function getTimeframeConfig(timeframe: TimeframeOption): {
     coingeckoInterval?: string;
     minDataPoints: number;
   }> = {
-    '1m': { intervalMinutes: 1, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '2m': { intervalMinutes: 2, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '3m': { intervalMinutes: 3, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '5m': { intervalMinutes: 5, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '10m': { intervalMinutes: 10, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '15m': { intervalMinutes: 15, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '30m': { intervalMinutes: 30, daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 60 },
-    '1h': { intervalMinutes: 60, daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 48 },
-    '2h': { intervalMinutes: 120, daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 48 },
-    '4h': { intervalMinutes: 240, daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 48 },
-    '6h': { intervalMinutes: 360, daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 48 },
-    '1d': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 30 },
+    '1m': { intervalMinutes: 1, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
+    '2m': { intervalMinutes: 2, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
+    '3m': { intervalMinutes: 3, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
+    '5m': { intervalMinutes: 5, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100 },
+    '10m': { intervalMinutes: 10, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 100 },
+    '15m': { intervalMinutes: 15, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 96 },
+    '30m': { intervalMinutes: 30, daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 96 },
+    '1h': { intervalMinutes: 60, daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 84 },
+    '2h': { intervalMinutes: 120, daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 84 },
+    '4h': { intervalMinutes: 240, daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 90 },
+    '6h': { intervalMinutes: 360, daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 120 },
+    '1d': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90 },
     '1M': { intervalMinutes: 1440, daysBack: 30, coingeckoInterval: 'daily', minDataPoints: 30 },
-    '3M': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 30 },
-    '1y': { intervalMinutes: 1440, daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 30 },
+    '3M': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90 },
+    '1y': { intervalMinutes: 1440, daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 365 },
   };
   return configs[timeframe];
 }
 
-// Fetch ICP historical data for chart with improved timeframe support
+// Fetch ICP historical data for chart with improved timeframe support and caching
 export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
   const { actor, isFetching } = useActor();
   const config = getTimeframeConfig(timeframe);

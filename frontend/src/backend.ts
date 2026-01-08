@@ -110,6 +110,10 @@ export interface PriceAlertStatus {
     isTriggered: boolean;
     price: number;
 }
+export interface Timeframe {
+    name: string;
+    intervalMinutes: bigint;
+}
 export interface http_header {
     value: string;
     name: string;
@@ -120,15 +124,16 @@ export interface http_request_result {
     headers: Array<http_header>;
 }
 export interface backendInterface {
-    addPriceToCache(price: number): Promise<void>;
+    cachePrice(price: number): Promise<void>;
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
     getCurrentPortfolioValue(): Promise<number>;
     getICPLivePrice(): Promise<string>;
     getLastCachedPrice(): Promise<number | null>;
     getPortfolioSummary(): Promise<ICPPortfolio>;
-    getPriceHistoryForHours(hours: bigint): Promise<Array<PriceCache>>;
+    getPriceHistoryForTimeframe(name: string): Promise<Array<PriceCache>>;
     getResampledPriceHistory(intervalMinutes: bigint): Promise<Array<PriceCache>>;
+    getTimeframes(): Promise<Array<Timeframe>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;
@@ -136,17 +141,17 @@ export interface backendInterface {
 }
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async addPriceToCache(arg0: number): Promise<void> {
+    async cachePrice(arg0: number): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.addPriceToCache(arg0);
+                const result = await this.actor.cachePrice(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addPriceToCache(arg0);
+            const result = await this.actor.cachePrice(arg0);
             return result;
         }
     }
@@ -234,17 +239,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getPriceHistoryForHours(arg0: bigint): Promise<Array<PriceCache>> {
+    async getPriceHistoryForTimeframe(arg0: string): Promise<Array<PriceCache>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPriceHistoryForHours(arg0);
+                const result = await this.actor.getPriceHistoryForTimeframe(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getPriceHistoryForHours(arg0);
+            const result = await this.actor.getPriceHistoryForTimeframe(arg0);
             return result;
         }
     }
@@ -259,6 +264,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getResampledPriceHistory(arg0);
+            return result;
+        }
+    }
+    async getTimeframes(): Promise<Array<Timeframe>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTimeframes();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTimeframes();
             return result;
         }
     }
