@@ -7,30 +7,22 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
 export interface PriceCache {
     timestamp: bigint;
+    price: number;
+}
+export interface PriceAlertStatus {
+    isTriggered: boolean;
     price: number;
 }
 export interface TransformationOutput {
     status: bigint;
     body: Uint8Array;
     headers: Array<http_header>;
-}
-export interface TransformationInput {
-    context: Uint8Array;
-    response: http_request_result;
-}
-export interface ICPPortfolio {
-    coins: number;
-    avgCost: number;
-}
-export interface PriceAlertStatus {
-    isTriggered: boolean;
-    price: number;
-}
-export interface Timeframe {
-    name: string;
-    intervalMinutes: bigint;
 }
 export interface http_header {
     value: string;
@@ -45,13 +37,13 @@ export interface backendInterface {
     cachePrice(price: number): Promise<void>;
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
-    getCurrentPortfolioValue(): Promise<number>;
+    getHistoricalDataRange(): Promise<{
+        end: bigint;
+        start: bigint;
+    }>;
+    getHistoricalPriceHistory(timeframe: string): Promise<Array<PriceCache>>;
     getICPLivePrice(): Promise<string>;
-    getLastCachedPrice(): Promise<number | null>;
-    getPortfolioSummary(): Promise<ICPPortfolio>;
-    getPriceHistoryForTimeframe(name: string): Promise<Array<PriceCache>>;
-    getResampledPriceHistory(intervalMinutes: bigint): Promise<Array<PriceCache>>;
-    getTimeframes(): Promise<Array<Timeframe>>;
+    getResampledPriceHistory(intervalNanos: bigint): Promise<Array<PriceCache>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;

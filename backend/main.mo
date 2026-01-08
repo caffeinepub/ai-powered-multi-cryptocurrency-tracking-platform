@@ -1,27 +1,19 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
 import Float "mo:core/Float";
+import Text "mo:core/Text";
 import Time "mo:core/Time";
 import List "mo:core/List";
 import OutCall "http-outcalls/outcall";
-import Runtime "mo:core/Runtime";
 import Int "mo:core/Int";
-import Text "mo:core/Text";
 import Nat "mo:core/Nat";
+import Runtime "mo:core/Runtime";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let cacheDurationNs = 24 * 60 * 60 * 1_000_000_000;
-
   type Alerts = Map.Map<Float, Bool>;
-  type ICPPortfolio = {
-    coins : Float;
-    avgCost : Float;
-  };
-
-  var icpPortfolio : ICPPortfolio = {
-    coins = 1864.0;
-    avgCost = 6.152;
-  };
 
   type PriceAlertStatus = {
     price : Float;
@@ -42,33 +34,10 @@ actor {
     timestamp : Int;
   };
 
-  type Timeframe = {
-    name : Text; // e.g. "1m", "5m", "1h"
-    intervalMinutes : Nat;
-  };
-
+  // Alert system
   let alerts : Alerts = Map.empty<Float, Bool>();
+
   let icpPriceHistory = List.empty<PriceCache>();
-
-  // Define timeframes
-  let shortTimeframes : [Timeframe] = [
-    { name = "1m"; intervalMinutes = 1 },
-    { name = "5m"; intervalMinutes = 5 },
-    { name = "15m"; intervalMinutes = 15 },
-    { name = "1h"; intervalMinutes = 60 },
-  ];
-  let longTimeframes : [Timeframe] = [
-    { name = "1d"; intervalMinutes = 1440 },
-    { name = "1w"; intervalMinutes = 10080 },
-  ];
-
-  let chartTimeframes : [Timeframe] = [
-    { name = "daily"; intervalMinutes = 1440 },
-    { name = "weekly"; intervalMinutes = 10080 },
-    { name = "monthly"; intervalMinutes = 43200 }, // 30 days
-    { name = "quarterly"; intervalMinutes = 129600 }, // 90 days
-    { name = "yearly"; intervalMinutes = 525600 }, // 365 days
-  ];
 
   // Indicator types
   public type Indicator = {
@@ -96,10 +65,6 @@ actor {
   public shared ({ caller }) func getTopCryptos() : async Text {
     let url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false";
     await OutCall.httpGetRequest(url, [], transform);
-  };
-
-  public query ({ caller }) func getPortfolioSummary() : async ICPPortfolio {
-    icpPortfolio;
   };
 
   public query ({ caller }) func getAlerts() : async [PriceAlertStatus] {
@@ -134,66 +99,46 @@ actor {
   };
 
   public query ({ caller }) func getCachedPriceHistory() : async [PriceCache] {
-    let entriesArray = icpPriceHistory.toArray();
-    entriesArray;
-  };
-
-  public query ({ caller }) func getLastCachedPrice() : async ?Float {
-    switch (icpPriceHistory.last()) {
-      case (?latestPrice) { ?latestPrice.price };
-      case (null) { null };
-    };
-  };
-
-  public query ({ caller }) func getCurrentPortfolioValue() : async Float {
-    switch (icpPriceHistory.last()) {
-      case (?latestPrice) { icpPortfolio.coins * latestPrice.price };
-      case (null) { 0.0 };
-    };
+    icpPriceHistory.toArray();
   };
 
   public shared ({ caller }) func recordNewICPPrice(price : Float) : async () {
     await cachePrice(price);
   };
 
-  // Get unique timeframes
-  public query ({ caller }) func getTimeframes() : async [Timeframe] {
-    let combinedTimeframes = shortTimeframes.concat(longTimeframes).concat(chartTimeframes);
-    let uniqueTimeframes = List.empty<Timeframe>();
-
-    for (tf in combinedTimeframes.values()) {
-      let exists = switch (uniqueTimeframes.values().find(func(existing) { existing.name == tf.name })) {
-        case (?_) { true };
-        case (null) { false };
-      };
-
-      if (not exists) {
-        uniqueTimeframes.add(tf);
-      };
-    };
-
-    uniqueTimeframes.toArray();
+  public type Timeframe = {
+    name : Text; // 1m, 2m, 3m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 6h, 1d, 1mo, 1q, 1y
+    intervalMinutes : Nat;
   };
 
-  // Get price history for specified timeframe
-  public shared ({ caller }) func getPriceHistoryForTimeframe(name : Text) : async [PriceCache] {
-    let timeframe = switch (findTimeframe(name)) {
-      case (?tf) { tf };
-      case (null) { Runtime.trap("Timeframe not found ") };
-    };
-    await getResampledPriceHistory(timeframe.intervalMinutes);
-  };
-
-  func findTimeframe(name : Text) : ?Timeframe {
-    let allTimeframes = shortTimeframes.concat(longTimeframes).concat(chartTimeframes);
-    switch (allTimeframes.find(func(tf) { tf.name == name })) {
-      case (?tf) { ?tf };
-      case (null) { null };
+  func getMinutesForTimeframe(name : Text) : Nat {
+    switch (name) {
+      case ("m") { 1 };
+      case ("2m") { 2 };
+      case ("3m") { 3 };
+      case ("5m") { 5 };
+      case ("10m") { 10 };
+      case ("15m") { 15 };
+      case ("30m") { 30 };
+      case ("1h") { 60 };
+      case ("2h") { 120 };
+      case ("4h") { 240 };
+      case ("6h") { 360 };
+      case ("1d") { 1440 };
+      case ("1mo") { 43200 };
+      case ("1q") { 129600 };
+      case ("1y") { 525600 };
+      case (_) { 1 };
     };
   };
 
-  public shared ({ caller }) func getResampledPriceHistory(intervalMinutes : Nat) : async [PriceCache] {
-    let intervalNanos = intervalMinutes * 60 * 1_000_000_000;
+  public shared ({ caller }) func getHistoricalPriceHistory(timeframe : Text) : async [PriceCache] {
+    let intervalNanos = getMinutesForTimeframe(timeframe) * 60 * 1_000_000_000;
+    await getResampledPriceHistory(intervalNanos);
+  };
+
+  public shared ({ caller }) func getResampledPriceHistory(intervalNanos : Nat) : async [PriceCache] {
+    let intervalNs = intervalNanos.toInt();
     let now = Time.now();
     let recentHistory = icpPriceHistory.filter(func(entry) { now - entry.timestamp <= cacheDurationNs }).toArray();
     if (recentHistory.size() == 0) { return [] };
@@ -205,7 +150,7 @@ actor {
     for (entry in recentHistory.values()) {
       switch (groupStartTime) {
         case (?startTime) {
-          if (entry.timestamp - startTime <= intervalNanos) {
+          if (entry.timestamp - startTime <= intervalNs) {
             currentGroup.add(entry);
           } else {
             grouped.add(currentGroup);
@@ -234,5 +179,27 @@ actor {
     });
 
     resampled.filterMap(func(x) { x });
+  };
+
+  public shared ({ caller }) func getHistoricalDataRange() : async {
+    start : Int;
+    end : Int;
+  } {
+    let entries = icpPriceHistory.toArray();
+    if (entries.size() == 0) {
+      { start = 0; end = 0 };
+    } else if (entries.size() == 1) {
+      { start = entries[0].timestamp; end = entries[0].timestamp };
+    } else {
+      var min = entries[0].timestamp;
+      var max = entries[0].timestamp;
+      let entriesIter = entries.sliceToArray(1, entries.size()).values();
+
+      for (entry in entriesIter) {
+        if (entry.timestamp < min) { min := entry.timestamp };
+        if (entry.timestamp > max) { max := entry.timestamp };
+      };
+      { start = min; end = max };
+    };
   };
 };

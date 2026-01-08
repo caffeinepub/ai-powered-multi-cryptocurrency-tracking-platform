@@ -89,30 +89,22 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
 export interface PriceCache {
     timestamp: bigint;
+    price: number;
+}
+export interface PriceAlertStatus {
+    isTriggered: boolean;
     price: number;
 }
 export interface TransformationOutput {
     status: bigint;
     body: Uint8Array;
     headers: Array<http_header>;
-}
-export interface TransformationInput {
-    context: Uint8Array;
-    response: http_request_result;
-}
-export interface ICPPortfolio {
-    coins: number;
-    avgCost: number;
-}
-export interface PriceAlertStatus {
-    isTriggered: boolean;
-    price: number;
-}
-export interface Timeframe {
-    name: string;
-    intervalMinutes: bigint;
 }
 export interface http_header {
     value: string;
@@ -127,13 +119,13 @@ export interface backendInterface {
     cachePrice(price: number): Promise<void>;
     getAlerts(): Promise<Array<PriceAlertStatus>>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
-    getCurrentPortfolioValue(): Promise<number>;
+    getHistoricalDataRange(): Promise<{
+        end: bigint;
+        start: bigint;
+    }>;
+    getHistoricalPriceHistory(timeframe: string): Promise<Array<PriceCache>>;
     getICPLivePrice(): Promise<string>;
-    getLastCachedPrice(): Promise<number | null>;
-    getPortfolioSummary(): Promise<ICPPortfolio>;
-    getPriceHistoryForTimeframe(name: string): Promise<Array<PriceCache>>;
-    getResampledPriceHistory(intervalMinutes: bigint): Promise<Array<PriceCache>>;
-    getTimeframes(): Promise<Array<Timeframe>>;
+    getResampledPriceHistory(intervalNanos: bigint): Promise<Array<PriceCache>>;
     getTopCryptos(): Promise<string>;
     recordNewICPPrice(price: number): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;
@@ -183,17 +175,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getCurrentPortfolioValue(): Promise<number> {
+    async getHistoricalDataRange(): Promise<{
+        end: bigint;
+        start: bigint;
+    }> {
         if (this.processError) {
             try {
-                const result = await this.actor.getCurrentPortfolioValue();
+                const result = await this.actor.getHistoricalDataRange();
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getCurrentPortfolioValue();
+            const result = await this.actor.getHistoricalDataRange();
+            return result;
+        }
+    }
+    async getHistoricalPriceHistory(arg0: string): Promise<Array<PriceCache>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getHistoricalPriceHistory(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getHistoricalPriceHistory(arg0);
             return result;
         }
     }
@@ -211,48 +220,6 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getLastCachedPrice(): Promise<number | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getLastCachedPrice();
-                return from_candid_opt_n1(this.uploadFile, this.downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getLastCachedPrice();
-            return from_candid_opt_n1(this.uploadFile, this.downloadFile, result);
-        }
-    }
-    async getPortfolioSummary(): Promise<ICPPortfolio> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPortfolioSummary();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPortfolioSummary();
-            return result;
-        }
-    }
-    async getPriceHistoryForTimeframe(arg0: string): Promise<Array<PriceCache>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getPriceHistoryForTimeframe(arg0);
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPriceHistoryForTimeframe(arg0);
-            return result;
-        }
-    }
     async getResampledPriceHistory(arg0: bigint): Promise<Array<PriceCache>> {
         if (this.processError) {
             try {
@@ -264,20 +231,6 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getResampledPriceHistory(arg0);
-            return result;
-        }
-    }
-    async getTimeframes(): Promise<Array<Timeframe>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getTimeframes();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getTimeframes();
             return result;
         }
     }
@@ -337,9 +290,6 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-}
-function from_candid_opt_n1(uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [number]): number | null {
-    return value.length === 0 ? null : value[0];
 }
 export interface CreateActorOptions {
     agent?: Agent;

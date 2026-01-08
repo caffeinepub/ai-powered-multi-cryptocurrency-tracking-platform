@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useICPHistoricalData, usePriceAlerts, type TimeframeOption } from '@/hooks/useQueries';
+import { useICPHistoricalData, usePriceAlerts, usePrefetchTimeframes, type TimeframeOption } from '@/hooks/useQueries';
 import {
   ComposedChart,
   Line,
@@ -133,8 +133,22 @@ export function ICPPriceChart() {
 
   const { data: historicalData, isLoading, error, refetch, isFetching } = useICPHistoricalData(selectedTimeframe);
   const { data: alerts } = usePriceAlerts();
+  const { prefetchTimeframe } = usePrefetchTimeframes();
 
-  // Calculate indicators based on historical data
+  // Prefetch adjacent timeframes for smoother transitions
+  useEffect(() => {
+    const currentIndex = TIMEFRAME_OPTIONS.findIndex(opt => opt.value === selectedTimeframe);
+    
+    // Prefetch next and previous timeframes
+    if (currentIndex > 0) {
+      prefetchTimeframe(TIMEFRAME_OPTIONS[currentIndex - 1].value);
+    }
+    if (currentIndex < TIMEFRAME_OPTIONS.length - 1) {
+      prefetchTimeframe(TIMEFRAME_OPTIONS[currentIndex + 1].value);
+    }
+  }, [selectedTimeframe, prefetchTimeframe]);
+
+  // Calculate indicators based on historical data with adaptive period handling
   const chartData = useMemo<ChartDataPoint[]>(() => {
     if (!historicalData || historicalData.length === 0) return [];
 
@@ -143,9 +157,16 @@ export function ICPPriceChart() {
       price: d.price,
     }));
 
+    // Adjust indicator periods based on data density
+    const dataLength = historicalData.length;
+    const rsiPeriod = Math.min(14, Math.max(7, Math.floor(dataLength / 10)));
+    const macdFast = Math.min(12, Math.max(6, Math.floor(dataLength / 15)));
+    const macdSlow = Math.min(26, Math.max(12, Math.floor(dataLength / 8)));
+    const macdSignal = Math.min(9, Math.max(5, Math.floor(dataLength / 20)));
+
     // Calculate RSI if enabled
     if (showRSI) {
-      const rsiData = calculateRSI(historicalData, 14);
+      const rsiData = calculateRSI(historicalData, rsiPeriod);
       const rsiMap = new Map(rsiData.map((d) => [d.timestamp, d.value]));
       data = data.map((d) => ({
         ...d,
@@ -155,7 +176,7 @@ export function ICPPriceChart() {
 
     // Calculate MACD if enabled
     if (showMACD) {
-      const macdData = calculateMACD(historicalData, 12, 26, 9);
+      const macdData = calculateMACD(historicalData, macdFast, macdSlow, macdSignal);
       const macdMap = new Map(
         macdData.map((d) => [
           d.timestamp,

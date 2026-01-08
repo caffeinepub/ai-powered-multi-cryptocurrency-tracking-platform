@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useICPPrice, useICPHistoricalData, usePortfolioSummary, usePriceAlerts } from '@/hooks/useQueries';
+import { useICPPrice, useICPHistoricalData, usePriceAlerts } from '@/hooks/useQueries';
 import { ICPPriceChart } from '@/components/ICPPriceChart';
 import { PortfolioCard } from '@/components/PortfolioCard';
 import { PriceAlertsCard } from '@/components/PriceAlertsCard';
@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 export function ICPTracker() {
   const { data: currentPrice, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice } = useICPPrice();
   const { data: historicalData } = useICPHistoricalData('1d');
-  const { data: portfolio, isLoading: isPortfolioLoading } = usePortfolioSummary();
   const { data: alerts } = usePriceAlerts();
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [notifiedAlerts, setNotifiedAlerts] = useState<Set<number>>(new Set());
@@ -153,7 +152,7 @@ export function ICPTracker() {
 
       {/* Portfolio and Alerts */}
       <div className="grid gap-6 md:grid-cols-2">
-        <PortfolioCard portfolio={portfolio} currentPrice={currentPrice} isLoading={isPortfolioLoading} />
+        <PortfolioCard currentPrice={currentPrice} />
         <PriceAlertsCard alerts={alerts} currentPrice={currentPrice} />
       </div>
     </section>

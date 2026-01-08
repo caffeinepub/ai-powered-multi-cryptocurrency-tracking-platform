@@ -257,7 +257,7 @@ function calculateKeltnerChannels(
 }
 
 /**
- * Calculate TTM Squeeze Indicator
+ * Calculate TTM Squeeze Indicator with adaptive period handling
  * @param data - Array of price data with high, low, close
  * @param bbPeriod - Bollinger Bands period (default: 20)
  * @param bbStdDev - Bollinger Bands standard deviation (default: 2)
@@ -272,7 +272,15 @@ export function calculateTTMSqueeze(
   kcPeriod: number = 20,
   kcMultiplier: number = 1.5
 ): TTMSqueezeData[] {
-  if (data.length < Math.max(bbPeriod, kcPeriod)) return [];
+  // Adjust periods based on data density to handle varying timeframes
+  const dataLength = data.length;
+  const adjustedBBPeriod = Math.min(bbPeriod, Math.floor(dataLength / 3));
+  const adjustedKCPeriod = Math.min(kcPeriod, Math.floor(dataLength / 3));
+  
+  if (dataLength < Math.max(adjustedBBPeriod, adjustedKCPeriod) * 2) {
+    // Not enough data for meaningful TTM calculation
+    return [];
+  }
 
   // For price data without high/low, use close as approximation
   const priceData = data.map((d) => ({
@@ -284,14 +292,14 @@ export function calculateTTMSqueeze(
 
   const bollingerBands = calculateBollingerBands(
     priceData.map((d) => ({ timestamp: d.timestamp, price: d.close })),
-    bbPeriod,
+    adjustedBBPeriod,
     bbStdDev
   );
 
   const keltnerChannels = calculateKeltnerChannels(
     priceData,
-    kcPeriod,
-    kcPeriod,
+    adjustedKCPeriod,
+    adjustedKCPeriod,
     kcMultiplier
   );
 
@@ -299,7 +307,7 @@ export function calculateTTMSqueeze(
 
   // Calculate momentum (simplified version using linear regression)
   const squeezeData: TTMSqueezeData[] = [];
-  const momentumPeriod = 12;
+  const momentumPeriod = Math.min(12, Math.floor(dataLength / 8));
 
   for (let i = 0; i < Math.min(bollingerBands.length, keltnerChannels.length); i++) {
     const bb = bollingerBands[i];
