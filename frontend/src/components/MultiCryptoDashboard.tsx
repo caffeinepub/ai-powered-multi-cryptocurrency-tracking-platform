@@ -38,7 +38,7 @@ export const CRYPTO_CONFIGS: Record<CryptoId, CryptoConfig> = {
     id: 'plume',
     name: 'Plume',
     symbol: 'PLUME',
-    coingeckoId: 'plume-network',
+    coingeckoId: 'plume-2', // Updated to correct CoinGecko ID
     targetPrices: [0.02, 0.04, 0.06, 0.08, 0.10],
     description: 'Emerging blockchain platform with AI-driven price forecasting',
   },
