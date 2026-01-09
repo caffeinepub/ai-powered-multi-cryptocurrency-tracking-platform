@@ -4,11 +4,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAIProjections } from '@/hooks/useQueries';
 import { Brain, TrendingUp, Calendar, Target } from 'lucide-react';
 import { format, addDays } from 'date-fns';
+import { CRYPTO_CONFIGS, type CryptoId } from '@/components/MultiCryptoDashboard';
 
-export function AIProjections() {
-  const { data: projections, isLoading } = useAIProjections();
+interface AIProjectionsProps {
+  cryptoId: CryptoId;
+}
 
-  const targetPrices = [3.567, 4.885, 5.152, 6.152, 9.828];
+export function AIProjections({ cryptoId }: AIProjectionsProps) {
+  const { data: projections, isLoading } = useAIProjections(cryptoId);
+  const config = CRYPTO_CONFIGS[cryptoId];
+  const targetPrices = config.targetPrices;
 
   return (
     <Card className="border-2 bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10">
@@ -32,7 +37,7 @@ export function AIProjections() {
       <CardContent>
         {isLoading ? (
           <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
+            {targetPrices.map((_, i) => (
               <Skeleton key={i} className="h-20 w-full" />
             ))}
           </div>
@@ -54,7 +59,9 @@ export function AIProjections() {
                       <Target className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <div className="text-xl font-bold">${target.toFixed(3)}</div>
+                      <div className="text-xl font-bold">
+                        ${target < 1 ? target.toFixed(4) : target.toFixed(3)}
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         <span>Est. {format(estimatedDate, 'MMM dd, yyyy')}</span>

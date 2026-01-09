@@ -3,7 +3,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { ICPDashboard } from '@/components/ICPDashboard';
+import { MultiCryptoDashboard } from '@/components/MultiCryptoDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,7 +25,7 @@ function App() {
           <Header />
           <main className="flex-1 animate-fade-in">
             <div className="container mx-auto px-4 py-8 md:py-12">
-              <ICPDashboard />
+              <MultiCryptoDashboard />
             </div>
           </main>
           <Footer />

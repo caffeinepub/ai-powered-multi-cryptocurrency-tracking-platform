@@ -1,25 +1,26 @@
-# AI Powered Internet Computer (ICP) Cryptocurrency Tracking Platform
+# AI Powered Multi Cryptocurrency Tracking Platform
 
 ## Overview
-A comprehensive AI-powered cryptocurrency tracking platform focused exclusively on Internet Computer (ICP) with advanced analytics, real-time data monitoring, and intelligent price projection capabilities. The platform provides complete market analysis with modern UI/UX design and real-time interactivity.
+A comprehensive AI-powered cryptocurrency tracking platform focused on Internet Computer (ICP), Uniswap (UNI), and Plume (PLUME) with advanced analytics, real-time data monitoring, and intelligent price projection capabilities. The platform provides complete market analysis with modern UI/UX design and real-time interactivity across multiple cryptocurrencies.
 
 ## Core Features
 
-### Real-Time ICP Data Dashboard
-- Display comprehensive live ICP data:
+### Multi-Cryptocurrency Real-Time Dashboard
+- Display comprehensive live data for ICP, UNI, and PLUME:
   - Current price in USD with real-time updates and instant refresh
   - Daily high and low prices with precise tracking
-  - 24-hour trading volume
+  - 24-hour trading volume and percentage change
   - Market capitalization
   - Price history with multiple timeframe views
   - Trading activity metrics
 - Dynamic updates without page refresh with optimized refresh intervals
 - Responsive formatting for desktop and mobile devices
 - Clean visual indicators for price movements (green for gains, red for losses)
+- Search-enabled dropdown for switching between cryptocurrency profiles
 - Seamless fallback logic to ensure continuous price display
 
 ### Advanced Technical Analysis
-- Comprehensive technical indicators:
+- Comprehensive technical indicators for all tracked cryptocurrencies:
   - RSI (Relative Strength Index)
   - MACD (Moving Average Convergence Divergence)
   - TTM Squeeze indicator
@@ -29,12 +30,10 @@ A comprehensive AI-powered cryptocurrency tracking platform focused exclusively 
 - Visual representation of trend strength and momentum
 
 ### AI Projection Engine
-- Intelligent forecasting system that predicts estimated timeframes for ICP to reach specific price targets:
-  - $3.567
-  - $4.885
-  - $5.152
-  - $6.152
-  - $9.828
+- Intelligent forecasting system that predicts estimated timeframes for each cryptocurrency to reach specific price targets:
+  - ICP: $3.567, $4.885, $5.152, $6.152, $9.828
+  - UNI: $9.831, $10.276
+  - PLUME: $0.02, $0.04, $0.06, $0.08, $0.10
 - Statistical and trend-based modeling using historical data
 - Backend-powered analytics with machine learning algorithms
 - Display projected timelines with confidence intervals
@@ -45,7 +44,7 @@ A comprehensive AI-powered cryptocurrency tracking platform focused exclusively 
 - Customizable timeframe selection:
   - Short-term: 1-minute, 5-minute, 15-minute
   - Medium-term: 1-hour, 4-hour
-  - Long-term: 1-day, 1-week, 1-month
+  - Long-term: 1-day, 1-week, 1-month, 1-year
 - AI-predicted trajectory overlays on charts
 - Interactive hover tooltips with comprehensive price and indicator details
 - Smooth chart transitions between timeframes
@@ -53,7 +52,7 @@ A comprehensive AI-powered cryptocurrency tracking platform focused exclusively 
 - Ultra-fast chart rendering with GPU acceleration
 
 ### Sentiment Analytics
-- AI-powered sentiment analysis of ICP market conditions
+- AI-powered sentiment analysis of market conditions for all tracked cryptocurrencies
 - Real-time sentiment indicators and scoring
 - Market mood visualization with clear visual feedback
 - Sentiment trend tracking over time
@@ -61,7 +60,7 @@ A comprehensive AI-powered cryptocurrency tracking platform focused exclusively 
 
 ### Responsive Dashboard Interface
 - Minimalistic, user-friendly design aesthetic
-- Smooth dropdown navigation system for easy access to different sections
+- Search-enabled dropdown navigation system for easy cryptocurrency switching
 - Light and dark mode toggle with seamless transitions
 - Ultra-responsive layout optimized for all device types
 - Modern typography and clean spacing
@@ -79,41 +78,40 @@ A comprehensive AI-powered cryptocurrency tracking platform focused exclusively 
 - Sentiment analytics display with visual indicators
 - Light/dark mode implementation
 - Ultra-fast chart rendering with performance optimization
-- Smooth dropdown navigation system
+- Search-enabled dropdown navigation system for cryptocurrency selection
 - Real-time hover tooltips and interactive elements
 - GPU-accelerated animations for optimal performance
 - Accessibility compliance (ARIA, keyboard navigation, contrast ratios)
-- Optimized live price updates in ICPPriceOverview and ICPTracker components
+- Optimized live price updates across all cryptocurrency components
 - Seamless fallback logic to prevent display delays or caching desyncs
 
 ### Backend
-- HTTP outcalls to CoinGecko and other reliable market data APIs
-- Optimized real-time ICP price data fetching with enhanced reliability and fast refresh intervals
-- Historical price data collection and storage
-- Technical indicator calculations (RSI, MACD, TTM Squeeze)
-- AI projection engine with statistical modeling
+- HTTP outcalls to CoinGecko and other reliable market data APIs for ICP, UNI, and PLUME
+- Optimized real-time price data fetching with enhanced reliability and fast refresh intervals
+- Historical price data collection and storage for all tracked cryptocurrencies
+- Technical indicator calculations (RSI, MACD, TTM Squeeze) for each cryptocurrency
+- AI projection engine with statistical modeling for multiple assets
 - Sentiment analysis processing from multiple data sources
 - Efficient data caching system for improved performance and stability
 - API response normalization and comprehensive error handling
-- Optimized getICPLivePrice function with efficient parsing and fast response times
 - Endpoints for:
-  - Current ICP price and market data with real-time accuracy
-  - Historical price data for all timeframes
-  - Technical indicator calculations
-  - AI price projections and target timelines
+  - Current price and market data for ICP, UNI, and PLUME with real-time accuracy
+  - Historical price data for all timeframes and cryptocurrencies
+  - Technical indicator calculations for each asset
+  - AI price projections and target timelines for all tracked cryptocurrencies
   - Sentiment analysis results
   - Chart data with projection overlays
 
 ### Data Management
-- Backend stores historical ICP price data with time-based indexing
+- Backend stores historical price data for ICP, UNI, and PLUME with time-based indexing
 - Smart cache system for API responses with optimized refresh logic
-- AI model data storage for projection calculations
+- AI model data storage for projection calculations across multiple cryptocurrencies
 - Sentiment analysis data processing and storage
-- Technical indicator calculations cached by timeframe
+- Technical indicator calculations cached by timeframe and cryptocurrency
 - Real-time data synchronization across all components with minimal latency
 
 ### AI Analytics System
-- Statistical modeling for price projection calculations
+- Statistical modeling for price projection calculations across multiple assets
 - Trend analysis algorithms for target price predictions
 - Machine learning integration for improved forecast accuracy
 - Sentiment data processing from multiple sources
@@ -121,12 +119,12 @@ A comprehensive AI-powered cryptocurrency tracking platform focused exclusively 
 - Regular model updates based on new market data
 
 ## User Interface
-- Main dashboard with comprehensive ICP data overview
+- Main dashboard with comprehensive multi-cryptocurrency data overview
 - Interactive charting section with timeframe controls
 - Technical analysis panel with customizable indicators
-- AI projections display with target price timelines
+- AI projections display with target price timelines for each cryptocurrency
 - Sentiment analytics section with visual indicators
-- Navigation system with smooth dropdown menus
+- Search-enabled navigation system with dropdown menus for cryptocurrency selection
 - Real-time data updates across all interface components with instant price refresh
 - Responsive design with optimized mobile experience
 - Clean, professional visual presentation

@@ -1,5 +1,5 @@
-import { ICPPriceOverview } from '@/components/ICPPriceOverview';
-import { ICPPriceChart } from '@/components/ICPPriceChart';
+import { CryptoPriceOverview } from '@/components/CryptoPriceOverview';
+import { CryptoPriceChart } from '@/components/CryptoPriceChart';
 import { AIProjections } from '@/components/AIProjections';
 import { SentimentAnalytics } from '@/components/SentimentAnalytics';
 import { MarketMetrics } from '@/components/MarketMetrics';
@@ -18,19 +18,19 @@ export function ICPDashboard() {
       </div>
 
       {/* Price Overview */}
-      <ICPPriceOverview />
+      <CryptoPriceOverview cryptoId="icp" />
 
       {/* Market Metrics */}
-      <MarketMetrics />
+      <MarketMetrics cryptoId="icp" />
 
       {/* AI Projections */}
-      <AIProjections />
+      <AIProjections cryptoId="icp" />
 
       {/* Sentiment Analytics */}
-      <SentimentAnalytics />
+      <SentimentAnalytics cryptoId="icp" />
 
       {/* Interactive Chart */}
-      <ICPPriceChart />
+      <CryptoPriceChart cryptoId="icp" />
     </div>
   );
 }

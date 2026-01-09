@@ -4,9 +4,14 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSentimentAnalytics } from '@/hooks/useQueries';
 import { Smile, Meh, Frown, TrendingUp, AlertTriangle } from 'lucide-react';
+import type { CryptoId } from '@/components/MultiCryptoDashboard';
 
-export function SentimentAnalytics() {
-  const { data: sentiment, isLoading } = useSentimentAnalytics();
+interface SentimentAnalyticsProps {
+  cryptoId: CryptoId;
+}
+
+export function SentimentAnalytics({ cryptoId }: SentimentAnalyticsProps) {
+  const { data: sentiment, isLoading } = useSentimentAnalytics(cryptoId);
 
   const sentimentScore = sentiment?.score || 65;
   const sentimentLabel = sentimentScore >= 70 ? 'Bullish' : sentimentScore >= 40 ? 'Neutral' : 'Bearish';

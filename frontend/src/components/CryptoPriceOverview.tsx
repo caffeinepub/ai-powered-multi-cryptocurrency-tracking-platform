@@ -7,10 +7,15 @@ import { Button } from '@/components/ui/button';
 import { useCryptoPrice, useCryptoDailyHighLow } from '@/hooks/useQueries';
 import { TrendingUp, TrendingDown, AlertCircle, RefreshCw, Clock, Activity } from 'lucide-react';
 import { format } from 'date-fns';
+import type { CryptoId } from '@/components/MultiCryptoDashboard';
 
-export function ICPPriceOverview() {
-  const { data: priceData, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice, isFetching } = useCryptoPrice('icp');
-  const { data: dailyHighLow, isLoading: isHighLowLoading } = useCryptoDailyHighLow('icp');
+interface CryptoPriceOverviewProps {
+  cryptoId: CryptoId;
+}
+
+export function CryptoPriceOverview({ cryptoId }: CryptoPriceOverviewProps) {
+  const { data: priceData, isLoading: isPriceLoading, error: priceError, refetch: refetchPrice, isFetching } = useCryptoPrice(cryptoId);
+  const { data: dailyHighLow, isLoading: isHighLowLoading } = useCryptoDailyHighLow(cryptoId);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [previousPrice, setPreviousPrice] = useState<number | null>(null);
   const [priceAnimation, setPriceAnimation] = useState<'up' | 'down' | null>(null);
@@ -109,7 +114,7 @@ export function ICPPriceOverview() {
                   priceAnimation === 'up' ? 'scale-105' : priceAnimation === 'down' ? 'scale-95' : ''
                 }`}
               >
-                ${currentPrice.toFixed(3)}
+                ${currentPrice < 1 ? currentPrice.toFixed(4) : currentPrice.toFixed(3)}
               </div>
               
               {/* 24h High/Low */}
@@ -124,14 +129,14 @@ export function ICPPriceOverview() {
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">24h High:</span>
                       <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                        ${dailyHighLow.high.toFixed(3)}
+                        ${dailyHighLow.high < 1 ? dailyHighLow.high.toFixed(4) : dailyHighLow.high.toFixed(3)}
                       </span>
                     </div>
                     <div className="h-6 w-px bg-border" />
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">24h Low:</span>
                       <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                        ${dailyHighLow.low.toFixed(3)}
+                        ${dailyHighLow.low < 1 ? dailyHighLow.low.toFixed(4) : dailyHighLow.low.toFixed(3)}
                       </span>
                     </div>
                   </>

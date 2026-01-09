@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCryptoHistoricalData, type TimeframeOption } from '@/hooks/useQueries';
+import type { CryptoId } from '@/components/MultiCryptoDashboard';
 import {
   ComposedChart,
   Line,
@@ -31,6 +32,10 @@ import {
   calculateTTMSqueeze,
   preparePriceDataForTTM,
 } from '@/lib/indicators';
+
+interface CryptoPriceChartProps {
+  cryptoId: CryptoId;
+}
 
 interface TimeframeConfig {
   value: TimeframeOption;
@@ -122,7 +127,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps<number, string>)
   );
 }
 
-export function ICPPriceChart() {
+export function CryptoPriceChart({ cryptoId }: CryptoPriceChartProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('1d');
   const [showRSI, setShowRSI] = useState(false);
   const [showMACD, setShowMACD] = useState(false);
@@ -130,7 +135,7 @@ export function ICPPriceChart() {
   const [showAIProjection, setShowAIProjection] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const { data: historicalData, isLoading, error, refetch, isFetching } = useCryptoHistoricalData('icp', selectedTimeframe);
+  const { data: historicalData, isLoading, error, refetch, isFetching } = useCryptoHistoricalData(cryptoId, selectedTimeframe);
 
   // Calculate indicators and AI projection
   const chartData = useMemo<ChartDataPoint[]>(() => {

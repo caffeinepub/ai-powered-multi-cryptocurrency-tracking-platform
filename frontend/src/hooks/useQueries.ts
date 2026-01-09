@@ -1,8 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { PriceCache, PriceRange } from '@/backend';
+import type { CryptoId } from '@/components/MultiCryptoDashboard';
+import { CRYPTO_CONFIGS } from '@/components/MultiCryptoDashboard';
 
-interface ICPMarketData {
+interface CryptoMarketData {
   market_cap: number;
   total_volume: number;
   circulating_supply: number;
@@ -14,72 +15,40 @@ interface HistoricalDataPoint {
   price: number;
 }
 
-interface ICPPriceResponse {
-  'internet-computer': {
-    usd: number;
-  };
-}
-
 export type TimeframeOption = '1m' | '2m' | '3m' | '5m' | '10m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '1d' | '1M' | '3M' | '1y';
 
-// Fetch ICP current price with optimized real-time updates
-export function useICPPrice() {
-  const { actor, isFetching } = useActor();
-  const queryClient = useQueryClient();
+// Fetch crypto current price with optimized real-time updates
+export function useCryptoPrice(cryptoId: CryptoId) {
+  const config = CRYPTO_CONFIGS[cryptoId];
 
-  return useQuery<number>({
-    queryKey: ['icp-price'],
+  return useQuery<{ price: number; priceChange24h: number }>({
+    queryKey: ['crypto-price', cryptoId],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not initialized');
-      
       try {
-        // Fetch live price from backend (which calls CoinGecko)
-        const response = await actor.getICPLivePrice();
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${config.coingeckoId}&vs_currencies=usd&include_24hr_change=true`
+        );
         
-        // Parse the JSON response
-        let data: ICPPriceResponse;
-        try {
-          data = JSON.parse(response);
-        } catch (parseError) {
-          console.error('Failed to parse price response:', parseError);
-          throw new Error('Invalid price data format');
+        if (!response.ok) {
+          throw new Error(`CoinGecko API error: ${response.status}`);
         }
         
-        // Extract price with validation
-        const price = data?.['internet-computer']?.usd;
+        const data = await response.json();
+        const price = data?.[config.coingeckoId]?.usd;
+        const priceChange24h = data?.[config.coingeckoId]?.usd_24h_change || 0;
+        
         if (typeof price !== 'number' || isNaN(price) || price <= 0) {
           throw new Error('Invalid price value received');
         }
         
-        // Cache the price in backend for fallback (fire and forget)
-        actor.recordNewICPPrice(price).catch((error) => {
-          console.warn('Failed to cache price in backend:', error);
-        });
-        
-        return price;
+        return { price, priceChange24h };
       } catch (error) {
-        console.warn('Live price fetch failed, attempting fallback to cache:', error);
-        
-        // Fallback to cached data
-        try {
-          const cachedData = await actor.getCachedPriceHistory();
-          if (cachedData && cachedData.length > 0) {
-            const latestCached = cachedData[cachedData.length - 1];
-            if (latestCached && typeof latestCached.price === 'number') {
-              console.info('Using cached price:', latestCached.price);
-              return latestCached.price;
-            }
-          }
-        } catch (cacheError) {
-          console.error('Failed to fetch cached data:', cacheError);
-        }
-        
+        console.error('Live price fetch failed:', error);
         throw error;
       }
     },
-    enabled: !!actor && !isFetching,
     refetchInterval: 10000, // Refetch every 10 seconds for real-time updates
-    staleTime: 5000, // Consider data stale after 5 seconds
+    staleTime: 5000,
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     refetchOnMount: true,
@@ -89,37 +58,53 @@ export function useICPPrice() {
 }
 
 // Fetch 24-hour high/low with optimized updates
-export function useDailyHighLow() {
-  const { actor, isFetching } = useActor();
+export function useCryptoDailyHighLow(cryptoId: CryptoId) {
+  const config = CRYPTO_CONFIGS[cryptoId];
 
-  return useQuery<PriceRange>({
-    queryKey: ['daily-high-low'],
+  return useQuery<{ high: number; low: number }>({
+    queryKey: ['crypto-daily-high-low', cryptoId],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not initialized');
-      const range = await actor.getDailyHighLowFromCache();
-      
-      // Validate the range data
-      if (!range || typeof range.high !== 'number' || typeof range.low !== 'number') {
-        throw new Error('Invalid price range data');
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/${config.coingeckoId}/market_chart?vs_currency=usd&days=1&interval=hourly`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`CoinGecko API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.prices || data.prices.length === 0) {
+          throw new Error('No price data returned');
+        }
+        
+        const prices = data.prices.map(([_, price]: [number, number]) => price);
+        const high = Math.max(...prices);
+        const low = Math.min(...prices);
+        
+        return { high, low };
+      } catch (error) {
+        console.error('Failed to fetch daily high/low:', error);
+        throw error;
       }
-      
-      return range;
     },
-    enabled: !!actor && !isFetching,
-    refetchInterval: 10000, // Sync with price updates
+    refetchInterval: 10000,
     staleTime: 5000,
     retry: 2,
     refetchOnMount: true,
   });
 }
 
-// Fetch ICP market data from CoinGecko
-export function useICPMarketData() {
-  return useQuery<ICPMarketData>({
-    queryKey: ['icp-market-data'],
+// Fetch crypto market data from CoinGecko
+export function useCryptoMarketData(cryptoId: CryptoId) {
+  const config = CRYPTO_CONFIGS[cryptoId];
+
+  return useQuery<CryptoMarketData>({
+    queryKey: ['crypto-market-data', cryptoId],
     queryFn: async () => {
       const response = await fetch(
-        'https://api.coingecko.com/api/v3/coins/internet-computer?localization=false&tickers=false&community_data=false&developer_data=false'
+        `https://api.coingecko.com/api/v3/coins/${config.coingeckoId}?localization=false&tickers=false&community_data=false&developer_data=false`
       );
       
       if (!response.ok) {
@@ -194,7 +179,6 @@ function resampleDataWithSmoothing(data: HistoricalDataPoint[], intervalMinutes:
 // Get timeframe configuration
 function getTimeframeConfig(timeframe: TimeframeOption): { 
   intervalMinutes: number;
-  intervalNanos: bigint;
   daysBack: number; 
   coingeckoInterval?: string;
   minDataPoints: number;
@@ -202,53 +186,41 @@ function getTimeframeConfig(timeframe: TimeframeOption): {
 } {
   const configs: Record<TimeframeOption, { 
     intervalMinutes: number;
-    intervalNanos: bigint;
     daysBack: number; 
     coingeckoInterval?: string;
     minDataPoints: number;
     refetchInterval: number;
   }> = {
-    '1m': { intervalMinutes: 1, intervalNanos: BigInt(1 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 15000 },
-    '2m': { intervalMinutes: 2, intervalNanos: BigInt(2 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 15000 },
-    '3m': { intervalMinutes: 3, intervalNanos: BigInt(3 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 15000 },
-    '5m': { intervalMinutes: 5, intervalNanos: BigInt(5 * 60 * 1_000_000_000), daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 20000 },
-    '10m': { intervalMinutes: 10, intervalNanos: BigInt(10 * 60 * 1_000_000_000), daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 30000 },
-    '15m': { intervalMinutes: 15, intervalNanos: BigInt(15 * 60 * 1_000_000_000), daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 96, refetchInterval: 30000 },
-    '30m': { intervalMinutes: 30, intervalNanos: BigInt(30 * 60 * 1_000_000_000), daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 96, refetchInterval: 60000 },
-    '1h': { intervalMinutes: 60, intervalNanos: BigInt(60 * 60 * 1_000_000_000), daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 84, refetchInterval: 120000 },
-    '2h': { intervalMinutes: 120, intervalNanos: BigInt(120 * 60 * 1_000_000_000), daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 84, refetchInterval: 180000 },
-    '4h': { intervalMinutes: 240, intervalNanos: BigInt(240 * 60 * 1_000_000_000), daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 90, refetchInterval: 240000 },
-    '6h': { intervalMinutes: 360, intervalNanos: BigInt(360 * 60 * 1_000_000_000), daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 120, refetchInterval: 300000 },
-    '1d': { intervalMinutes: 1440, intervalNanos: BigInt(1440 * 60 * 1_000_000_000), daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90, refetchInterval: 300000 },
-    '1M': { intervalMinutes: 43200, intervalNanos: BigInt(43200 * 60 * 1_000_000_000), daysBack: 30, coingeckoInterval: 'daily', minDataPoints: 30, refetchInterval: 600000 },
-    '3M': { intervalMinutes: 129600, intervalNanos: BigInt(129600 * 60 * 1_000_000_000), daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90, refetchInterval: 600000 },
-    '1y': { intervalMinutes: 525600, intervalNanos: BigInt(525600 * 60 * 1_000_000_000), daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 365, refetchInterval: 600000 },
+    '1m': { intervalMinutes: 1, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 15000 },
+    '2m': { intervalMinutes: 2, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 15000 },
+    '3m': { intervalMinutes: 3, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 15000 },
+    '5m': { intervalMinutes: 5, daysBack: 1, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 20000 },
+    '10m': { intervalMinutes: 10, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 100, refetchInterval: 30000 },
+    '15m': { intervalMinutes: 15, daysBack: 2, coingeckoInterval: 'minutely', minDataPoints: 96, refetchInterval: 30000 },
+    '30m': { intervalMinutes: 30, daysBack: 3, coingeckoInterval: 'minutely', minDataPoints: 96, refetchInterval: 60000 },
+    '1h': { intervalMinutes: 60, daysBack: 7, coingeckoInterval: 'hourly', minDataPoints: 84, refetchInterval: 120000 },
+    '2h': { intervalMinutes: 120, daysBack: 14, coingeckoInterval: 'hourly', minDataPoints: 84, refetchInterval: 180000 },
+    '4h': { intervalMinutes: 240, daysBack: 30, coingeckoInterval: 'hourly', minDataPoints: 90, refetchInterval: 240000 },
+    '6h': { intervalMinutes: 360, daysBack: 60, coingeckoInterval: 'hourly', minDataPoints: 120, refetchInterval: 300000 },
+    '1d': { intervalMinutes: 1440, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90, refetchInterval: 300000 },
+    '1M': { intervalMinutes: 43200, daysBack: 30, coingeckoInterval: 'daily', minDataPoints: 30, refetchInterval: 600000 },
+    '3M': { intervalMinutes: 129600, daysBack: 90, coingeckoInterval: 'daily', minDataPoints: 90, refetchInterval: 600000 },
+    '1y': { intervalMinutes: 525600, daysBack: 365, coingeckoInterval: 'daily', minDataPoints: 365, refetchInterval: 600000 },
   };
   return configs[timeframe];
 }
 
-// Prefetch timeframes
-export function usePrefetchTimeframes() {
-  const { actor, isFetching } = useActor();
-
-  const prefetchTimeframe = async (timeframe: TimeframeOption) => {
-    // Prefetching logic would go here
-  };
-
-  return { prefetchTimeframe };
-}
-
-// Fetch ICP historical data
-export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
-  const { actor, isFetching } = useActor();
-  const config = getTimeframeConfig(timeframe);
+// Fetch crypto historical data
+export function useCryptoHistoricalData(cryptoId: CryptoId, timeframe: TimeframeOption = '1d') {
+  const config = CRYPTO_CONFIGS[cryptoId];
+  const timeframeConfig = getTimeframeConfig(timeframe);
 
   return useQuery<HistoricalDataPoint[]>({
-    queryKey: ['icp-historical', timeframe],
+    queryKey: ['crypto-historical', cryptoId, timeframe],
     queryFn: async () => {
       try {
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/internet-computer/market_chart?vs_currency=usd&days=${config.daysBack}&interval=${config.coingeckoInterval || 'hourly'}`
+          `https://api.coingecko.com/api/v3/coins/${config.coingeckoId}/market_chart?vs_currency=usd&days=${timeframeConfig.daysBack}&interval=${timeframeConfig.coingeckoInterval || 'hourly'}`
         );
         
         if (!response.ok) {
@@ -266,60 +238,20 @@ export function useICPHistoricalData(timeframe: TimeframeOption = '1d') {
           price,
         }));
         
-        const resampledData = resampleDataWithSmoothing(rawData, config.intervalMinutes);
+        const resampledData = resampleDataWithSmoothing(rawData, timeframeConfig.intervalMinutes);
         
-        if (resampledData.length < config.minDataPoints && rawData.length >= config.minDataPoints) {
-          return resampleDataWithSmoothing(rawData, Math.max(1, Math.floor(config.intervalMinutes / 2)));
+        if (resampledData.length < timeframeConfig.minDataPoints && rawData.length >= timeframeConfig.minDataPoints) {
+          return resampleDataWithSmoothing(rawData, Math.max(1, Math.floor(timeframeConfig.intervalMinutes / 2)));
         }
         
         return resampledData;
       } catch (error) {
-        console.warn('CoinGecko API failed, falling back to cached data:', error);
-        
-        if (!actor) throw new Error('Actor not initialized');
-        
-        try {
-          const resampledData = await actor.getResampledPriceHistory(config.intervalNanos);
-          
-          if (resampledData.length > 0) {
-            const backendData = resampledData.map((entry: PriceCache) => ({
-              timestamp: Number(entry.timestamp) / 1_000_000,
-              price: entry.price,
-            }));
-            
-            return backendData.sort((a, b) => a.timestamp - b.timestamp);
-          }
-        } catch (backendError) {
-          console.warn('Backend resampling failed:', backendError);
-        }
-        
-        try {
-          const cachedData = await actor.getCachedPriceHistory();
-          
-          if (cachedData.length > 0) {
-            const rawCachedData = cachedData.map((entry: PriceCache) => ({
-              timestamp: Number(entry.timestamp) / 1_000_000,
-              price: entry.price,
-            })).sort((a, b) => a.timestamp - b.timestamp);
-            
-            const resampled = resampleDataWithSmoothing(rawCachedData, config.intervalMinutes);
-            
-            if (resampled.length >= 2) {
-              return resampled;
-            }
-            
-            return rawCachedData.slice(-100);
-          }
-        } catch (cacheError) {
-          console.warn('Failed to fetch cached data:', cacheError);
-        }
-        
-        throw new Error('No data available from any source');
+        console.error('Failed to fetch historical data:', error);
+        throw error;
       }
     },
-    enabled: !!actor && !isFetching,
-    refetchInterval: config.refetchInterval,
-    staleTime: config.intervalMinutes < 60 ? 10000 : 240000,
+    refetchInterval: timeframeConfig.refetchInterval,
+    staleTime: timeframeConfig.intervalMinutes < 60 ? 10000 : 240000,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -332,13 +264,15 @@ interface AIProjection {
   confidence: number;
 }
 
-export function useAIProjections() {
+export function useAIProjections(cryptoId: CryptoId) {
+  const config = CRYPTO_CONFIGS[cryptoId];
+
   return useQuery<AIProjection[]>({
-    queryKey: ['ai-projections'],
+    queryKey: ['ai-projections', cryptoId],
     queryFn: async () => {
       // Simulate AI projection calculations
       // In production, this would call backend endpoints
-      const targets = [3.567, 4.885, 5.152, 6.152, 9.828];
+      const targets = config.targetPrices;
       
       return targets.map((target, index) => ({
         targetPrice: target,
@@ -360,9 +294,9 @@ interface SentimentData {
   volatility: number;
 }
 
-export function useSentimentAnalytics() {
+export function useSentimentAnalytics(cryptoId: CryptoId) {
   return useQuery<SentimentData>({
-    queryKey: ['sentiment-analytics'],
+    queryKey: ['sentiment-analytics', cryptoId],
     queryFn: async () => {
       // Simulate sentiment analysis
       // In production, this would call backend endpoints

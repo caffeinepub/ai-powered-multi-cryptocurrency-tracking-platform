@@ -15,9 +15,9 @@ export function Header() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              ICP Tracker AI
+              Crypto Tracker AI
             </h1>
-            <p className="text-xs text-muted-foreground hidden sm:block">AI-Powered Internet Computer Analytics</p>
+            <p className="text-xs text-muted-foreground hidden sm:block">AI-Powered Multi-Crypto Analytics</p>
           </div>
         </div>
 
