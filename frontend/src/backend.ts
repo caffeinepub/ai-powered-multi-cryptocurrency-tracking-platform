@@ -155,8 +155,10 @@ export interface backendInterface {
     createPriceAlert(price: number): Promise<void>;
     deletePriceAlert(price: number): Promise<void>;
     getAlerts(): Promise<Array<[number, boolean]>>;
+    getAllCryptosLiveData(): Promise<string>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
     getCachedTopCryptos(): Promise<Array<Coin>>;
+    getCachedUNIPriceHistory(): Promise<Array<PriceCache>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyHighLowFromCache(): Promise<PriceRange>;
@@ -169,9 +171,11 @@ export interface backendInterface {
     getPortfolioGoals(): Promise<Array<PortfolioGoal>>;
     getPortfolioSummary(): Promise<PortfolioSummary>;
     getResampledPriceHistory(intervalNanos: bigint): Promise<Array<PriceCache>>;
+    getUNILivePrice(): Promise<string>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     recordNewICPPrice(price: number): Promise<void>;
+    recordNewUNIPrice(price: number): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePortfolioGoals(goals: Array<PortfolioGoal>): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;
@@ -264,6 +268,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getAllCryptosLiveData(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllCryptosLiveData();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllCryptosLiveData();
+            return result;
+        }
+    }
     async getCachedPriceHistory(): Promise<Array<PriceCache>> {
         if (this.processError) {
             try {
@@ -290,6 +308,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getCachedTopCryptos();
             return from_candid_vec_n6(this.uploadFile, this.downloadFile, result);
+        }
+    }
+    async getCachedUNIPriceHistory(): Promise<Array<PriceCache>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCachedUNIPriceHistory();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCachedUNIPriceHistory();
+            return result;
         }
     }
     async getCallerUserProfile(): Promise<UserProfile | null> {
@@ -421,6 +453,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getUNILivePrice(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUNILivePrice();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUNILivePrice();
+            return result;
+        }
+    }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
@@ -460,6 +506,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.recordNewICPPrice(arg0);
+            return result;
+        }
+    }
+    async recordNewUNIPrice(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recordNewUNIPrice(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recordNewUNIPrice(arg0);
             return result;
         }
     }

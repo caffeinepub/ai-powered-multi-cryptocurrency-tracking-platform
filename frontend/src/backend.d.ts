@@ -72,8 +72,10 @@ export interface backendInterface {
     createPriceAlert(price: number): Promise<void>;
     deletePriceAlert(price: number): Promise<void>;
     getAlerts(): Promise<Array<[number, boolean]>>;
+    getAllCryptosLiveData(): Promise<string>;
     getCachedPriceHistory(): Promise<Array<PriceCache>>;
     getCachedTopCryptos(): Promise<Array<Coin>>;
+    getCachedUNIPriceHistory(): Promise<Array<PriceCache>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyHighLowFromCache(): Promise<PriceRange>;
@@ -86,9 +88,11 @@ export interface backendInterface {
     getPortfolioGoals(): Promise<Array<PortfolioGoal>>;
     getPortfolioSummary(): Promise<PortfolioSummary>;
     getResampledPriceHistory(intervalNanos: bigint): Promise<Array<PriceCache>>;
+    getUNILivePrice(): Promise<string>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     recordNewICPPrice(price: number): Promise<void>;
+    recordNewUNIPrice(price: number): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     savePortfolioGoals(goals: Array<PortfolioGoal>): Promise<void>;
     toggleAlertStatus(price: number): Promise<void>;

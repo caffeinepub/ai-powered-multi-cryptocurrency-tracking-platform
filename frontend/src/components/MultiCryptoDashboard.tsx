@@ -31,7 +31,7 @@ export const CRYPTO_CONFIGS: Record<CryptoId, CryptoConfig> = {
     name: 'Uniswap',
     symbol: 'UNI',
     coingeckoId: 'uniswap',
-    targetPrices: [9.831, 10.276],
+    targetPrices: [9.831, 10.276, 15, 20, 25, 30, 35, 40, 45],
     description: 'Leading decentralized exchange protocol with comprehensive analytics',
   },
   plume: {

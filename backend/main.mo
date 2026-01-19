@@ -12,7 +12,9 @@ import Principal "mo:core/Principal";
 import OutCall "http-outcalls/outcall";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -59,6 +61,18 @@ actor {
     profitLossPercent : Float;
   };
 
+  public type CryptoData = {
+    id : Text;
+    symbol : Text;
+    name : Text;
+    currentPrice : Float;
+    marketCap : ?Float;
+    volume24h : ?Float;
+    circulatingSupply : ?Float;
+    priceChange24h : ?Float;
+    marketRank : ?Nat;
+  };
+
   public type CoinBase = {
     id : Text;
     symbol : Text;
@@ -75,6 +89,8 @@ actor {
   let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
   let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;
   let icpPriceHistory = List.empty<PriceCache>();
+  let uniPriceHistory = List.empty<PriceCache>(); // New UNI price history tracking
+
   type PriceEntry = {
     price : Float;
     timestamp : Int;
@@ -90,8 +106,15 @@ actor {
     OutCall.transform(input);
   };
 
-  public shared ({ caller }) func getICPLivePrice() : async Text {
+  // Public market data - accessible to all including guests
+  public shared func getICPLivePrice() : async Text {
     let url = "https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd";
+    await OutCall.httpGetRequest(url, [], transform);
+  };
+
+  // Public market data - accessible to all including guests
+  public shared func getUNILivePrice() : async Text {
+    let url = "https://api.coingecko.com/api/v3/simple/price?ids=uniswap&vs_currencies=usd";
     await OutCall.httpGetRequest(url, [], transform);
   };
 
@@ -106,7 +129,6 @@ actor {
     };
   };
 
-  // User profile management as required by instructions
   public type UserProfile = {
     name : Text;
   };
@@ -176,9 +198,17 @@ actor {
     alerts.add(price, currentStatus);
   };
 
-  public query ({ caller }) func getCachedPriceHistory() : async [PriceCache] {
+  // Public market data - accessible to all including guests
+  public query func getCachedPriceHistory() : async [PriceCache] {
     let currentTime = Time.now();
     let filtered = icpPriceHistory.filter(func(entry) { currentTime - entry.timestamp <= cacheDurationInt });
+    filtered.toArray();
+  };
+
+  // Public market data - accessible to all including guests
+  public query func getCachedUNIPriceHistory() : async [PriceCache] {
+    let currentTime = Time.now();
+    let filtered = uniPriceHistory.filter(func(entry) { currentTime - entry.timestamp <= cacheDurationInt });
     filtered.toArray();
   };
 
@@ -202,6 +232,28 @@ actor {
     icpPriceHistory.clear();
     icpPriceHistory.addAll(filtered.values());
     icpPriceHistory.add(newEntry);
+  };
+
+  public shared ({ caller }) func recordNewUNIPrice(price : Float) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can record prices");
+    };
+    let newEntry = {
+      price;
+      timestamp = Time.now() : Int;
+    };
+
+    let currentTimeInt = Time.now() : Int;
+    let currentTimeNat = Int.abs(currentTimeInt);
+    let filtered = uniPriceHistory.filter(
+      func(entry) {
+        Int.abs(currentTimeInt - entry.timestamp) <= cacheDurationNat
+      }
+    );
+
+    uniPriceHistory.clear();
+    uniPriceHistory.addAll(filtered.values());
+    uniPriceHistory.add(newEntry);
   };
 
   func findClosestEntry(array : [PriceCache], time : Int) : ?PriceCache {
@@ -252,7 +304,8 @@ actor {
     dayInNanos * (timestamp / dayInNanos);
   };
 
-  public query ({ caller }) func getDailyHighLowFromCache() : async PriceRange {
+  // Public market data - accessible to all including guests
+  public query func getDailyHighLowFromCache() : async PriceRange {
     var high : Float = 0.0;
     var low : Float = 0.0;
 
@@ -276,12 +329,11 @@ actor {
     { high; low };
   };
 
-  // Public market data - no authorization required
-  public shared ({ caller }) func getHistoricalPriceHistory(params : TimeframeParams) : async [PriceCache] {
+  // Public market data - accessible to all including guests
+  public shared func getHistoricalPriceHistory(params : TimeframeParams) : async [PriceCache] {
     let intervalNs = params.intervalNanos;
     let now = Time.now();
 
-    // 1. Filter recent data.
     let recentHistory = params.priceData.filter(
       func(entry) {
         (now - entry.timestamp).toFloat() <= cacheDurationInt.toFloat();
@@ -290,10 +342,8 @@ actor {
 
     if (recentHistory.size() == 0) { return [] };
 
-    // Use array for better access.
     let array = recentHistory;
 
-    // 2. Map exact (aligned) entries to new array.
     let mappedAligned = array.map(
       func(entry) {
         {
@@ -303,10 +353,8 @@ actor {
       }
     );
 
-    // 3. Interpolate missing entries (not aligned).
     let final = mappedAligned.map(
       func(entry) {
-        // Try direct match.
         switch (findClosestEntry(array, entry.timestamp)) {
           case (?closest) {
             let delta = Int.abs(closest.timestamp - entry.timestamp);
@@ -320,7 +368,6 @@ actor {
           case (null) {};
         };
 
-        // If no direct match, interpolate.
         let { left; right; ratio } = getRelativePosition(entry.timestamp, array);
 
         switch (left, right) {
@@ -343,7 +390,8 @@ actor {
     final;
   };
 
-  public shared ({ caller }) func getResampledPriceHistory(intervalNanos : Nat) : async [PriceCache] {
+  // Public market data - accessible to all including guests
+  public shared func getResampledPriceHistory(intervalNanos : Nat) : async [PriceCache] {
     let intervalNs = intervalNanos.toInt();
     let now = Time.now();
     let recentHistory = icpPriceHistory.filter(
@@ -391,7 +439,8 @@ actor {
     resampled.filterMap(func(x) { x });
   };
 
-  public shared ({ caller }) func getHistoricalDataRange() : async {
+  // Public market data - accessible to all including guests
+  public shared func getHistoricalDataRange() : async {
     start : Int;
     end : Int;
   } {
@@ -451,7 +500,8 @@ actor {
     };
   };
 
-  public query ({ caller }) func getCachedTopCryptos() : async [Coin] {
+  // Public market data - accessible to all including guests
+  public query func getCachedTopCryptos() : async [Coin] {
     cachedTopCryptos.toArray();
   };
 
@@ -466,7 +516,6 @@ actor {
     trimCacheToMaxDays(30);
   };
 
-  // Portfolio goals - per user
   public type PortfolioGoal = {
     name : Text;
     target : Float;
@@ -504,6 +553,12 @@ actor {
     for (goal in goals.values()) {
       userGoals.add(goal);
     };
+  };
+
+  // Public market data - accessible to all including guests
+  public shared func getAllCryptosLiveData() : async Text {
+    let url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=internet-computer,uniswap,plume,polkadot";
+    await OutCall.httpGetRequest(url, [], transform);
   };
 
   func getMinutesForTimeframe(name : Text) : Nat {
