@@ -1,37 +1,37 @@
-import Array "mo:core/Array";
 import Map "mo:core/Map";
-import Float "mo:core/Float";
-import List "mo:core/List";
 import Int "mo:core/Int";
-import Nat "mo:core/Nat";
+import List "mo:core/List";
+import Text "mo:core/Text";
+import Array "mo:core/Array";
+import Float "mo:core/Float";
+import Time "mo:core/Time";
 import Iter "mo:core/Iter";
 import Runtime "mo:core/Runtime";
-import Text "mo:core/Text";
-import Time "mo:core/Time";
+import Nat "mo:core/Nat";
 import Principal "mo:core/Principal";
 import OutCall "http-outcalls/outcall";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
 
 actor {
-  // Authorization Mixin
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  type Alerts = Map.Map<Float, Bool>;
-  let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
-  let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;
-
-  type CoinBase = {
-    id : Text;
-    symbol : Text;
-    name : Text;
-    marketCap : ?Float;
-    priceChange24h : ?Float;
+  public type Indicator = {
+    #none;
+    #rsi;
+    #macd;
+    #ttmSqueeze;
   };
 
-  type Coin = CoinBase and {
-    currentPrice : Float;
+  public type ChartType = {
+    #line;
+    #candlestick;
+  };
+
+  public type Timeframe = {
+    name : Text; // 1m, 2m, 3m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 6h, 1d, 1mo, 1q, 1y
+    intervalMinutes : Nat;
   };
 
   public type PriceRange = {
@@ -39,12 +39,12 @@ actor {
     high : Float;
   };
 
-  type PriceCache = {
+  public type PriceCache = {
     price : Float;
     timestamp : Int;
   };
 
-  type ChartPriceCache = PriceCache and {
+  public type ChartPriceCache = PriceCache and {
     open : Float;
     high : Float;
     low : Float;
@@ -59,29 +59,37 @@ actor {
     profitLossPercent : Float;
   };
 
-  // Alert system - per user
-  let userAlerts = Map.empty<Principal, Alerts>();
-  let icpPriceHistory = List.empty<PriceCache>();
-
-  // Indicator types
-  public type Indicator = {
-    #none;
-    #rsi;
-    #macd;
-    #ttmSqueeze;
+  public type CoinBase = {
+    id : Text;
+    symbol : Text;
+    name : Text;
+    marketCap : ?Float;
+    priceChange24h : ?Float;
   };
 
-  // Chart type
-  public type ChartType = {
-    #line;
-    #candlestick;
+  public type Coin = CoinBase and {
+    currentPrice : Float;
+  };
+
+  type Alerts = Map.Map<Float, Bool>;
+  let cacheDurationInt = 24 * 60 * 60 * 1_000_000_000;
+  let cacheDurationNat : Nat = 24 * 60 * 60 * 1_000_000_000;
+  let icpPriceHistory = List.empty<PriceCache>();
+  type PriceEntry = {
+    price : Float;
+    timestamp : Int;
+  };
+
+  type TimeframeParams = {
+    intervalNanos : Int;
+    timeframe : Text;
+    priceData : [PriceCache];
   };
 
   public query func transform(input : OutCall.TransformationInput) : async OutCall.TransformationOutput {
     OutCall.transform(input);
   };
 
-  // Public market data - no authorization required
   public shared ({ caller }) func getICPLivePrice() : async Text {
     let url = "https://api.coingecko.com/api/v3/simple/price?ids=internet-computer&vs_currencies=usd";
     await OutCall.httpGetRequest(url, [], transform);
@@ -96,6 +104,35 @@ actor {
         newAlerts;
       };
     };
+  };
+
+  // User profile management as required by instructions
+  public type UserProfile = {
+    name : Text;
+  };
+
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let userAlerts = Map.empty<Principal, Alerts>();
+
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access profiles");
+    };
+    userProfiles.get(caller);
+  };
+
+  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Can only view your own profile");
+    };
+    userProfiles.get(user);
+  };
+
+  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can save profiles");
+    };
+    userProfiles.add(caller, profile);
   };
 
   public query ({ caller }) func getAlerts() : async [(Float, Bool)] {
@@ -139,7 +176,6 @@ actor {
     alerts.add(price, currentStatus);
   };
 
-  // Public market data - no authorization required
   public query ({ caller }) func getCachedPriceHistory() : async [PriceCache] {
     let currentTime = Time.now();
     let filtered = icpPriceHistory.filter(func(entry) { currentTime - entry.timestamp <= cacheDurationInt });
@@ -166,38 +202,6 @@ actor {
     icpPriceHistory.clear();
     icpPriceHistory.addAll(filtered.values());
     icpPriceHistory.add(newEntry);
-  };
-
-  public type Timeframe = {
-    name : Text; // 1m, 2m, 3m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 6h, 1d, 1mo, 1q, 1y
-    intervalMinutes : Nat;
-  };
-
-  func getMinutesForTimeframe(name : Text) : Nat {
-    switch (name) {
-      case ("m") { 1 };
-      case ("2m") { 2 };
-      case ("3m") { 3 };
-      case ("5m") { 5 };
-      case ("10m") { 10 };
-      case ("15m") { 15 };
-      case ("30m") { 30 };
-      case ("1h") { 60 };
-      case ("2h") { 120 };
-      case ("4h") { 240 };
-      case ("6h") { 360 };
-      case ("1d") { 1440 };
-      case ("1mo") { 43200 };
-      case ("1q") { 129600 };
-      case ("1y") { 525600 };
-      case (_) { 1 };
-    };
-  };
-
-  public type TimeframeParams = {
-    intervalNanos : Int;
-    timeframe : Text;
-    priceData : [PriceCache];
   };
 
   func findClosestEntry(array : [PriceCache], time : Int) : ?PriceCache {
@@ -248,7 +252,6 @@ actor {
     dayInNanos * (timestamp / dayInNanos);
   };
 
-  // Public market data - no authorization required
   public query ({ caller }) func getDailyHighLowFromCache() : async PriceRange {
     var high : Float = 0.0;
     var low : Float = 0.0;
@@ -340,7 +343,6 @@ actor {
     final;
   };
 
-  // Public market data - no authorization required
   public shared ({ caller }) func getResampledPriceHistory(intervalNanos : Nat) : async [PriceCache] {
     let intervalNs = intervalNanos.toInt();
     let now = Time.now();
@@ -389,7 +391,6 @@ actor {
     resampled.filterMap(func(x) { x });
   };
 
-  // Public market data - no authorization required
   public shared ({ caller }) func getHistoricalDataRange() : async {
     start : Int;
     end : Int;
@@ -410,7 +411,6 @@ actor {
     };
   };
 
-  // Portfolio summary - user-specific data
   public query ({ caller }) func getPortfolioSummary() : async PortfolioSummary {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access portfolio summary");
@@ -441,7 +441,6 @@ actor {
     };
   };
 
-  // Top cryptos functions - public market data, no auth required for reading
   let cachedTopCryptos = List.empty<Coin>();
 
   func trimCacheToMaxDays(days : Nat) : () {
@@ -453,7 +452,6 @@ actor {
   };
 
   public query ({ caller }) func getCachedTopCryptos() : async [Coin] {
-    // Public market data - no authorization required for reading
     cachedTopCryptos.toArray();
   };
 
@@ -468,7 +466,8 @@ actor {
     trimCacheToMaxDays(30);
   };
 
-  type PortfolioGoal = {
+  // Portfolio goals - per user
+  public type PortfolioGoal = {
     name : Text;
     target : Float;
     isCompleted : Bool;
@@ -507,31 +506,24 @@ actor {
     };
   };
 
-  // User profile management as required by instructions
-  public type UserProfile = {
-    name : Text;
-  };
-
-  let userProfiles = Map.empty<Principal, UserProfile>();
-
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can access profiles");
+  func getMinutesForTimeframe(name : Text) : Nat {
+    switch (name) {
+      case ("m") { 1 };
+      case ("2m") { 2 };
+      case ("3m") { 3 };
+      case ("5m") { 5 };
+      case ("10m") { 10 };
+      case ("15m") { 15 };
+      case ("30m") { 30 };
+      case ("1h") { 60 };
+      case ("2h") { 120 };
+      case ("4h") { 240 };
+      case ("6h") { 360 };
+      case ("1d") { 1440 };
+      case ("1mo") { 43200 };
+      case ("1q") { 129600 };
+      case ("1y") { 525600 };
+      case (_) { 1 };
     };
-    userProfiles.get(caller);
-  };
-
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
-    };
-    userProfiles.get(user);
-  };
-
-  public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
-    userProfiles.add(caller, profile);
   };
 };

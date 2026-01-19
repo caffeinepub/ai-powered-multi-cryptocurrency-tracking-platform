@@ -6,7 +6,7 @@ import { AIProjections } from '@/components/AIProjections';
 import { SentimentAnalytics } from '@/components/SentimentAnalytics';
 import { MarketMetrics } from '@/components/MarketMetrics';
 
-export type CryptoId = 'icp' | 'uni' | 'plume';
+export type CryptoId = 'icp' | 'uni' | 'plume' | 'dot';
 
 export interface CryptoConfig {
   id: CryptoId;
@@ -38,9 +38,17 @@ export const CRYPTO_CONFIGS: Record<CryptoId, CryptoConfig> = {
     id: 'plume',
     name: 'Plume',
     symbol: 'PLUME',
-    coingeckoId: 'plume-2', // Updated to correct CoinGecko ID
+    coingeckoId: 'plume-2',
     targetPrices: [0.02, 0.04, 0.06, 0.08, 0.10],
     description: 'Emerging blockchain platform with AI-driven price forecasting',
+  },
+  dot: {
+    id: 'dot',
+    name: 'Polkadot',
+    symbol: 'DOT',
+    coingeckoId: 'polkadot',
+    targetPrices: [3.529, 4.882, 5.397, 11.654, 11.893, 20, 30, 40, 50],
+    description: 'Multi-chain protocol enabling cross-blockchain transfers with advanced analytics',
   },
 };
 
