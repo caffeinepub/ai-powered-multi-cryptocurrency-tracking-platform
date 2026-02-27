@@ -3,24 +3,24 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Top150Dashboard } from '@/components/Top150Dashboard';
+import { Top100Dashboard } from '@/components/Top100Dashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      staleTime: 30000,
-      gcTime: 1000 * 60 * 10,
+      staleTime: 60000,
+      gcTime: 1000 * 60 * 15,
       retry: (failureCount, error) => {
         if (error instanceof Error) {
           if (error.message.includes('429') || error.message.includes('Rate limit')) {
             return false;
           }
         }
-        return failureCount < 2;
+        return failureCount < 3;
       },
-      retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000),
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
   },
 });
@@ -32,7 +32,7 @@ function App() {
         <div className="min-h-screen flex flex-col bg-background text-foreground">
           <Header />
           <main className="flex-1">
-            <Top150Dashboard />
+            <Top100Dashboard />
           </main>
           <Footer />
         </div>

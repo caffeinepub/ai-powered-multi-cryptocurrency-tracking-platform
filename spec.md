@@ -1,16 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Replace the existing crypto dashboard with a full-featured Crypto Tracker AI app showing live data for the top 150 cryptocurrencies, advanced filters, and a 12-month price projection tool.
+**Goal:** Rebuild the frontend as a clean, dark-mode crypto tracker showing the top 100 cryptocurrencies by market cap, with filtering/sorting controls, a 12-month price projection section, and a cohesive neon-accented dark UI.
 
 **Planned changes:**
-- Build a full-page dark-mode dashboard with a "Crypto Tracker AI" header and a hero banner
-- Fetch live top-150 coin data from CoinGecko (market cap, price, 24h change, volume, buy ratio, fully diluted market cap) with auto-refresh every 60 seconds
-- Display coins in a sortable, paginated table with color-coded 24h change (green/red) and coin logos
-- Add a filter/control bar with four dropdowns (Market Cap, Volume, Buy Ratio, Fully Diluted Market Cap), a search input by name/symbol, and a reset button
-- Add a "Price Projections" section below the table with a searchable coin selector, a 12-row monthly projection table (low/mid/high price + confidence %), and a Recharts line chart with shaded bands
-- Implement client-side projection logic using current price and 30-day historical trend from CoinGecko (no external AI API)
-- Add `useTopCoins` and `useCoinHistory` React Query hooks with caching, loading skeletons, and error handling
-- Apply a dark charcoal/neon cyan/gold glassmorphism theme, fully responsive down to 375 px
+- Replace all existing dashboard components with a single `Top100Dashboard` component that fetches the top 100 coins from the CoinGecko public API and displays them in a paginated (25/page), sortable table with columns: Rank, Name/Symbol (with logo), Price, 24h Change (%), Market Cap, 24h Volume, Buy Ratio, and Fully Diluted Market Cap
+- Add a filter/sort control bar above the table with a text search input, four metric dropdowns (Market Cap, 24h Volume, Buy Ratio, Fully Diluted Market Cap — each with High→Low / Low→High), and a Reset button
+- Add a Price Projections section below the table with a searchable coin selector, a 12-month projection table (low/mid/high prices + confidence score per month), and a Recharts line chart of the mid-price trajectory; projections computed client-side using linear regression and volatility logic on 30-day CoinGecko history
+- Implement a React Query data-fetching layer (`useTopCoins` with 60s stale time, `useCoinHistory` with 5-minute stale time), both with exponential backoff retry (max 3) and cached fallback on error
+- Apply a dark-mode-first theme: near-black charcoal background, neon cyan primary accent, gold secondary accent, glassmorphism table/card/dropdown styling, emerald green for positive and red for negative 24h changes, sticky header with "Crypto Tracker AI" branding and a pulsing live badge, responsive down to 375px
+- Remove/clean up all legacy components (Top150Dashboard, MultiCryptoDashboard, ICPDashboard, etc.)
+- Update `App.tsx` to render only the new `Top100Dashboard`
 
-**User-visible outcome:** Users can browse, sort, and filter the top 150 cryptocurrencies live, then select any coin to view a 12-month algorithmic price projection with a chart and monthly targets.
+**User-visible outcome:** Users see a fully rebuilt crypto tracker with a live top-100 table, real-time filtering and sorting controls, and a dedicated section to view 12-month price projections with a chart for any of the listed coins — all in a polished dark UI.

@@ -1,128 +1,133 @@
 {
   "kind": "build_request",
-  "title": "Crypto Tracker – Top 150 Coins with Live Filters & 12-Month Price Projections",
+  "title": "Fresh rebuild: Top 100 crypto tracker with filters and 12-month price projections",
   "projectName": "Crypto Tracker AI",
-  "priority": "normal",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Replace the existing multi-crypto dashboard with a new full-page dashboard that displays the top 150 cryptocurrencies ranked by market cap. Fetch live data from the CoinGecko public API (markets endpoint, vs_currency=usd, per_page=150, page=1). Display each coin in a sortable, paginated table with columns: Rank, Name/Symbol, Price, 24h Change, Market Cap, 24h Volume, Buy Ratio (approximated as 24h volume / market cap × 100, shown as a percentage), and Fully Diluted Market Cap.",
+      "id": "REQ-6",
+      "text": "Replace all existing dashboard components with a single clean Top100Dashboard component. Fetch the top 100 cryptocurrencies by market cap from the CoinGecko public API (endpoint: /api/v3/coins/markets, params: vs_currency=usd, order=market_cap_desc, per_page=100, page=1, sparkline=false). Display results in a paginated, sortable table with columns: Rank, Name/Symbol (with coin logo), Price (USD), 24h Change (%), Market Cap, 24h Volume, Buy Ratio (24h volume ÷ market cap × 100, as a percentage), and Fully Diluted Market Cap. Update App.tsx to render only the new Top100Dashboard.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-4"
         ],
         "quotes": [
-          "tracks the top 150 cryptocurrencies by market cap",
-          "live market cap, volume, buy ratio, and fully diluted market cap"
+          "tracks the top 100 cryptocurrencies by market cap"
         ]
       },
       "acceptanceCriteria": [
-        "Table renders 150 rows of live CoinGecko data on load",
-        "Each row shows: rank, coin name, symbol, logo, current price, 24h % change (color-coded green/red), market cap, 24h volume, buy ratio %, and fully diluted market cap",
+        "Table renders exactly 100 rows of live CoinGecko data on load",
+        "All 8 columns are present and correctly populated",
+        "Buy Ratio column shows (volume/marketCap)*100 formatted as a percentage",
         "Table is sortable by clicking any column header",
-        "Table supports pagination or virtual scrolling for performance",
-        "Data auto-refreshes every 60 seconds"
+        "Table is paginated (e.g. 25 rows per page) with page navigation controls",
+        "Coin logo thumbnails are displayed alongside name and symbol",
+        "All previous dashboard components (Top150Dashboard, MultiCryptoDashboard, etc.) are removed from the rendered page"
       ]
     },
     {
-      "id": "REQ-2",
-      "text": "Add a filter/control bar above the top-150 table with dropdown selectors that allow the user to filter or sort the list by each of the following metrics individually: Live Market Cap (high to low / low to high), 24h Volume (high to low / low to high), Buy Ratio (high to low / low to high), and Fully Diluted Market Cap (high to low / low to high). Include a search input to filter coins by name or symbol. Include a reset button to clear all active filters.",
+      "id": "REQ-7",
+      "text": "Add a filter and sort control bar above the Top 100 table. Include: a text search input to filter coins by name or symbol; four dropdown selectors to sort/filter by Live Market Cap, 24h Volume, Buy Ratio, and Fully Diluted Market Cap (each with High→Low and Low→High options); and a Reset button that clears all active filters and search input, restoring the default market-cap-desc order.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-4"
         ],
         "quotes": [
-          "specific dropdown tools to filter each cryptocurrency to track live market cap, volume, buy ratio, and fully diluted market cap"
+          "Add specific dropdown tools to filter each cryptocurrency to track live market cap, volume, buy ratio, and fully diluted market cap"
         ]
       },
       "acceptanceCriteria": [
-        "Four dropdown selectors exist: one each for Market Cap, Volume, Buy Ratio, and Fully Diluted Market Cap",
-        "Selecting a dropdown option re-sorts or filters the table immediately without page reload",
-        "Search input filters the visible rows by name or ticker symbol in real time",
-        "Reset button clears all dropdowns and search input and restores default market-cap ranking",
-        "Active filter state is visually indicated on the dropdown buttons"
+        "Search input filters the table rows in real time by coin name or ticker symbol (case-insensitive)",
+        "Each of the four metric dropdowns correctly reorders the visible rows when a sort direction is selected",
+        "Only one sort criterion is active at a time; selecting a new dropdown deselects the previous one",
+        "Reset button restores the default sort order and clears the search field",
+        "Filter bar is fully visible and usable at 375 px mobile width"
       ]
     },
     {
-      "id": "REQ-3",
-      "text": "Add a dedicated 'Price Projections' section below the main table. This section contains a coin selector dropdown (searchable, showing all 150 coins) and, once a coin is selected, displays a 12-month rolling price projection panel. The projection must show: a monthly price target table (Month 1 through Month 12 from today), a projected price range (low / mid / high) per month, a confidence score per month, and a line chart visualising the projected price trajectory over the 12-month period. Projections are algorithmically derived on the frontend using the coin's current price, 30-day historical trend from CoinGecko, and simple momentum/regression logic — no external AI API call required.",
+      "id": "REQ-8",
+      "text": "Add a dedicated Price Projections section below the Top 100 table. The section must include: a searchable coin selector dropdown populated from the 100 fetched coins; a 12-month rolling projection panel displayed once a coin is selected, showing a monthly table (Month 1–12 from today) with low, mid, and high projected prices and a confidence score per month; and a line chart (using Recharts) visualising the mid projected price trajectory across all 12 months. Projections must be computed entirely on the frontend using the selected coin's current price, 30-day historical price data fetched from CoinGecko (/api/v3/coins/{id}/market_chart?vs_currency=usd&days=30), and linear regression + volatility logic (reuse or adapt frontend/src/utils/projections.ts).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-4"
         ],
         "quotes": [
-          "separate section to filter each cryptocurrencies price projections on a current, 12-month running schedule"
+          "provide a separate section to filter each cryptocurrencies price projections on a current, 12-month running schedule"
         ]
       },
       "acceptanceCriteria": [
-        "A 'Price Projections' section is rendered below the main tracker table",
-        "A searchable dropdown lets the user pick any of the 150 tracked coins",
-        "After selecting a coin, a 12-row monthly projection table appears (Month 1 – Month 12)",
-        "Each row shows projected low, mid, and high price plus a confidence percentage",
-        "A Recharts line chart visualises the mid-price projection curve with shaded bands for low/high range",
-        "Projections update when the selected coin changes",
-        "The projection methodology is documented with a short disclaimer note in the UI"
+        "Coin selector dropdown is searchable and lists all 100 coins",
+        "Selecting a coin triggers a CoinGecko 30-day history fetch and displays the projection panel",
+        "Projection table shows 12 rows (one per month) with low, mid, high prices and a confidence score",
+        "Confidence score decreases gradually for later months to reflect growing uncertainty",
+        "Line chart renders mid-price trajectory across 12 months with month labels on the x-axis",
+        "Loading and error states are handled gracefully with user-facing messages",
+        "No external AI API calls are made; all projection logic is algorithmic and runs in the browser"
       ]
     },
     {
-      "id": "REQ-4",
-      "text": "Implement a CoinGecko data-fetching layer using React Query with in-memory caching and rate-limit-safe request batching. Use the existing useQueries.ts pattern. Add a new hook (e.g. useTopCoins) that fetches the top 150 coins market data and a hook (e.g. useCoinHistory) that fetches 30-day historical price data for a selected coin. Both hooks must handle loading, error, and empty states gracefully and fall back to cached data on API errors.",
+      "id": "REQ-9",
+      "text": "Implement a clean React Query data-fetching layer in frontend/src/hooks/useQueries.ts. Provide a useTopCoins hook (fetches the top 100 coins market data with a 60-second stale time and in-memory cache) and a useCoinHistory hook (fetches 30-day price history for a given coin ID, with a 5-minute stale time). Both hooks must handle loading, error, and empty states, fall back to cached data on API errors, and include rate-limit-safe retry logic (exponential backoff, max 3 retries).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-4"
         ],
         "quotes": [
-          "tracks the top 150 cryptocurrencies by market cap"
+          "latest AI and modern software tools"
         ]
       },
       "acceptanceCriteria": [
-        "useTopCoins hook returns 150 coins with all required fields",
-        "useCoinHistory hook accepts a coinId and returns 30 data points",
-        "React Query cache is used — repeated renders do not fire duplicate requests within the cache window",
-        "Loading skeletons are shown while data is fetching",
-        "Error boundary or error message is shown if the API fails"
+        "useTopCoins returns { data, isLoading, isError } and caches results for 60 seconds",
+        "useCoinHistory accepts a coin ID string and returns cached 30-day price arrays",
+        "On API error, both hooks return the last successful cached value if available",
+        "Retry logic uses exponential backoff and does not exceed 3 attempts",
+        "No duplicate API calls fire when multiple components consume the same hook simultaneously"
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Apply a cohesive dark-mode-first visual theme to the entire application. Use a dark charcoal/near-black base with neon cyan and gold accent colors. Use a clean sans-serif typeface. The header should display 'Crypto Tracker AI' branding. Cards, tables, and dropdowns should use subtle glassmorphism or frosted-panel styling. Positive price changes must render in emerald green, negative in red. The layout must be fully responsive down to 375 px mobile width.",
+      "id": "REQ-10",
+      "text": "Apply a cohesive dark-mode-first visual theme across the entire rebuilt application. Use a near-black charcoal base (#0d0f14 or equivalent), neon cyan primary accent, and gold secondary accent. Use a clean sans-serif typeface. The sticky header must display 'Crypto Tracker AI' branding with a live indicator badge. Tables, cards, and dropdowns must use subtle glassmorphism / frosted-panel styling. Positive 24h price changes render in emerald green, negative in red. The full layout must be responsive down to 375 px mobile width.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-latest"
+          "msg-4"
+        ],
+        "quotes": [
+          "latest AI and modern software tools",
+          "website"
         ]
       },
       "acceptanceCriteria": [
-        "App renders in dark mode by default with charcoal backgrounds and neon cyan / gold accents",
-        "All table rows, cards, and dropdowns use consistent glassmorphism styling",
-        "Positive 24h change values are green, negative values are red",
-        "Layout is fully usable on a 375 px wide mobile screen",
-        "Header shows 'Crypto Tracker AI' title"
+        "Background is near-black charcoal; neon cyan and gold are used for accents and highlights",
+        "Header is sticky and displays 'Crypto Tracker AI' with a pulsing live badge",
+        "Table rows, filter cards, and dropdowns have a frosted/glassmorphism appearance",
+        "Positive percentage changes are rendered in emerald green, negative in red",
+        "Layout renders correctly and is usable at 375 px viewport width with no horizontal scroll",
+        "Dark mode is the default; no light-mode toggle is required"
       ]
     }
   ],
   "constraints": [
-    "Use only the CoinGecko public API (no API key required) for all live market data",
-    "All price projection logic must run client-side — no backend AI or external projection API calls",
-    "Do not modify files under frontend/src/hooks/useActor.ts, frontend/src/hooks/useInternetIdentity.ts, frontend/src/main.tsx, or frontend/src/components/ui",
-    "Keep all Motoko backend logic in backend/main.mo (no new backend files unless migration is needed)"
+    "All data fetching must use the public CoinGecko API only — no API key required",
+    "No external AI API calls for projections; all forecast logic must run client-side",
+    "Do not modify files listed in frontend.immutablePaths",
+    "Backend (main.mo) must not be changed unless explicitly needed for new state",
+    "All empty legacy component files (ICPDashboard, MultiCryptoDashboard, Top50Dashboard, etc.) should be cleaned up or left empty — do not resurrect them"
   ],
   "nonGoals": [
-    "User authentication or Internet Identity login for this feature",
-    "Portfolio tracking or personal watchlists",
+    "Internet Identity login or user authentication",
+    "Saving favourite coins or user preferences to the backend",
+    "Portfolio simulation or investment planning features",
     "Real-time WebSocket price streaming",
-    "Backend storage of market data or projections",
-    "News feed or social sentiment integration",
-    "Candlestick OHLC charting"
+    "Light mode toggle",
+    "More than 100 coins in the main table"
   ],
   "imageRequirements": {
-    "required": [
-      "Dark futuristic hero banner with abstract cryptocurrency network nodes and glowing cyan lines on a near-black background (crypto-hero-banner.dim_1440x320.png)"
-    ],
+    "required": [],
     "edits": []
   }
 }

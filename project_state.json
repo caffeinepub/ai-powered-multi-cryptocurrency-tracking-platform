@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "Cryptocurrency tracking website that monitors the top 150 cryptocurrencies by market cap, with dropdown filters for live market cap, volume, buy ratio, and fully diluted market cap, plus a separate price projections section on a 12-month rolling schedule.",
+  "projectStateVersion": 5,
+  "summary": "Cryptocurrency tracking website that monitors the top 100 cryptocurrencies by market cap, with dropdown filters for live market cap, volume, buy ratio, and fully diluted market cap, plus a separate price projections section on a 12-month rolling schedule. Complete restart from scratch.",
   "architectural_notes": [
     "Use a live crypto data API (e.g., CoinGecko or CoinMarketCap) to fetch top 150 cryptocurrencies by market cap",
     "Implement dropdown/filter UI components for market cap, volume, buy ratio, and fully diluted market cap per coin",
@@ -11,7 +11,6 @@
     "Previous build attempts with full scope failed; consider breaking into incremental deployments"
   ],
   "isFixRequest": false,
-  "imageRequirements": "## Required Images\n- Dark futuristic hero banner with abstract cryptocurrency network nodes and glowing cyan lines on a near-black background (crypto-hero-banner.dim_1440x320.png)",
   "existing_features": [
     {
       "id": "feature-replace-the-existing-multi-crypto-dashboard-with-a-new-full-page-dashboard-that-displays-the-top-150-cryptocurrencies-ranked-by-market-cap-fetch-live-data-from-the-coingecko-public-api-markets-endpoint-vs-currency-usd-per-page-150-page-1-display-each-coin-in-a-sortable-paginated-table-with-columns-rank-name-symbol-price-24h-change-market-cap-24h-volume-buy-ratio-approximated-as-24h-volume-market-cap-100-shown-as-a-percentage-and-fully-diluted-market-cap",
@@ -50,6 +49,46 @@
       "title": "Apply a cohesive dark-mode-first visual theme to the entire application. Use a dark charcoal/near-black base with neon cyan and gold accent colors. Use a clean sans-serif typeface. The header should display 'Crypto Tracker AI' branding. Cards, tables, and dropdowns should use subtle glassmorphism or frosted-panel styling. Positive price changes must render in emerald green, negative in red. The layout must be fully responsive down to 375 px mobile width.",
       "reqIds": [
         "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-all-existing-dashboard-components-with-a-single-clean-top100dashboard-component-fetch-the-top-100-cryptocurrencies-by-market-cap-from-the-coingecko-public-api-endpoint-api-v3-coins-markets-params-vs-currency-usd-order-market-cap-desc-per-page-100-page-1-sparkline-false-display-results-in-a-paginated-sortable-table-with-columns-rank-name-symbol-with-coin-logo-price-usd-24h-change-market-cap-24h-volume-buy-ratio-24h-volume-market-cap-100-as-a-percentage-and-fully-diluted-market-cap-update-app-tsx-to-render-only-the-new-top100dashboard",
+      "title": "Replace all existing dashboard components with a single clean Top100Dashboard component. Fetch the top 100 cryptocurrencies by market cap from the CoinGecko public API (endpoint: /api/v3/coins/markets, params: vs_currency=usd, order=market_cap_desc, per_page=100, page=1, sparkline=false). Display results in a paginated, sortable table with columns: Rank, Name/Symbol (with coin logo), Price (USD), 24h Change (%), Market Cap, 24h Volume, Buy Ratio (24h volume ÷ market cap × 100, as a percentage), and Fully Diluted Market Cap. Update App.tsx to render only the new Top100Dashboard.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-filter-and-sort-control-bar-above-the-top-100-table-include-a-text-search-input-to-filter-coins-by-name-or-symbol-four-dropdown-selectors-to-sort-filter-by-live-market-cap-24h-volume-buy-ratio-and-fully-diluted-market-cap-each-with-high-low-and-low-high-options-and-a-reset-button-that-clears-all-active-filters-and-search-input-restoring-the-default-market-cap-desc-order",
+      "title": "Add a filter and sort control bar above the Top 100 table. Include: a text search input to filter coins by name or symbol; four dropdown selectors to sort/filter by Live Market Cap, 24h Volume, Buy Ratio, and Fully Diluted Market Cap (each with High→Low and Low→High options); and a Reset button that clears all active filters and search input, restoring the default market-cap-desc order.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-dedicated-price-projections-section-below-the-top-100-table-the-section-must-include-a-searchable-coin-selector-dropdown-populated-from-the-100-fetched-coins-a-12-month-rolling-projection-panel-displayed-once-a-coin-is-selected-showing-a-monthly-table-month-1-12-from-today-with-low-mid-and-high-projected-prices-and-a-confidence-score-per-month-and-a-line-chart-using-recharts-visualising-the-mid-projected-price-trajectory-across-all-12-months-projections-must-be-computed-entirely-on-the-frontend-using-the-selected-coin-s-current-price-30-day-historical-price-data-fetched-from-coingecko-api-v3-coins-id-market-chart-vs-currency-usd-days-30-and-linear-regression-volatility-logic-reuse-or-adapt-frontend-src-utils-projections-ts",
+      "title": "Add a dedicated Price Projections section below the Top 100 table. The section must include: a searchable coin selector dropdown populated from the 100 fetched coins; a 12-month rolling projection panel displayed once a coin is selected, showing a monthly table (Month 1–12 from today) with low, mid, and high projected prices and a confidence score per month; and a line chart (using Recharts) visualising the mid projected price trajectory across all 12 months. Projections must be computed entirely on the frontend using the selected coin's current price, 30-day historical price data fetched from CoinGecko (/api/v3/coins/{id}/market_chart?vs_currency=usd&days=30), and linear regression + volatility logic (reuse or adapt frontend/src/utils/projections.ts).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-clean-react-query-data-fetching-layer-in-frontend-src-hooks-usequeries-ts-provide-a-usetopcoins-hook-fetches-the-top-100-coins-market-data-with-a-60-second-stale-time-and-in-memory-cache-and-a-usecoinhistory-hook-fetches-30-day-price-history-for-a-given-coin-id-with-a-5-minute-stale-time-both-hooks-must-handle-loading-error-and-empty-states-fall-back-to-cached-data-on-api-errors-and-include-rate-limit-safe-retry-logic-exponential-backoff-max-3-retries",
+      "title": "Implement a clean React Query data-fetching layer in frontend/src/hooks/useQueries.ts. Provide a useTopCoins hook (fetches the top 100 coins market data with a 60-second stale time and in-memory cache) and a useCoinHistory hook (fetches 30-day price history for a given coin ID, with a 5-minute stale time). Both hooks must handle loading, error, and empty states, fall back to cached data on API errors, and include rate-limit-safe retry logic (exponential backoff, max 3 retries).",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-cohesive-dark-mode-first-visual-theme-across-the-entire-rebuilt-application-use-a-near-black-charcoal-base-0d0f14-or-equivalent-neon-cyan-primary-accent-and-gold-secondary-accent-use-a-clean-sans-serif-typeface-the-sticky-header-must-display-crypto-tracker-ai-branding-with-a-live-indicator-badge-tables-cards-and-dropdowns-must-use-subtle-glassmorphism-frosted-panel-styling-positive-24h-price-changes-render-in-emerald-green-negative-in-red-the-full-layout-must-be-responsive-down-to-375-px-mobile-width",
+      "title": "Apply a cohesive dark-mode-first visual theme across the entire rebuilt application. Use a near-black charcoal base (#0d0f14 or equivalent), neon cyan primary accent, and gold secondary accent. Use a clean sans-serif typeface. The sticky header must display 'Crypto Tracker AI' branding with a live indicator badge. Tables, cards, and dropdowns must use subtle glassmorphism / frosted-panel styling. Positive 24h price changes render in emerald green, negative in red. The full layout must be responsive down to 375 px mobile width.",
+      "reqIds": [
+        "REQ-10"
       ],
       "version": 1
     }

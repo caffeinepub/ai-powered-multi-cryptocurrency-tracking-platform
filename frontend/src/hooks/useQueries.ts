@@ -21,52 +21,45 @@ export interface HistoricalPricePoint {
   price: number;
 }
 
-const topCoinsCache: { data: CoinMarketData[]; timestamp: number } | null = null;
 let _topCoinsCache: { data: CoinMarketData[]; timestamp: number } | null = null;
 const coinHistoryCache = new Map<string, { data: HistoricalPricePoint[]; timestamp: number }>();
 
 export function useTopCoins() {
   return useQuery<CoinMarketData[]>({
-    queryKey: ['top-150-coins'],
+    queryKey: ['top-100-coins'],
     queryFn: async () => {
-      // Check in-memory cache first (5 min)
-      if (_topCoinsCache && Date.now() - _topCoinsCache.timestamp < 300000) {
+      // Return in-memory cache if fresh (60s)
+      if (_topCoinsCache && Date.now() - _topCoinsCache.timestamp < 60000) {
         return _topCoinsCache.data;
       }
 
-      // Fetch page 1 (100 coins) and page 2 (50 coins) in parallel
-      const [res1, res2] = await Promise.all([
-        fetch(
-          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h',
-          { headers: { Accept: 'application/json' } }
-        ),
-        fetch(
-          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=2&sparkline=false&price_change_percentage=24h',
-          { headers: { Accept: 'application/json' } }
-        ),
-      ]);
+      const res = await fetch(
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false&price_change_percentage=24h',
+        { headers: { Accept: 'application/json' } }
+      );
 
-      if (res1.status === 429 || res2.status === 429) {
+      if (res.status === 429) {
         if (_topCoinsCache) return _topCoinsCache.data;
         throw new Error('Rate limit exceeded (429). Please wait a moment.');
       }
 
-      if (!res1.ok || !res2.ok) {
-        throw new Error(`CoinGecko API error: ${res1.status} / ${res2.status}`);
+      if (!res.ok) {
+        if (_topCoinsCache) return _topCoinsCache.data;
+        throw new Error(`CoinGecko API error: ${res.status}`);
       }
 
-      const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
-      const combined: CoinMarketData[] = [...data1, ...data2];
-
-      _topCoinsCache = { data: combined, timestamp: Date.now() };
-      return combined;
+      const data: CoinMarketData[] = await res.json();
+      _topCoinsCache = { data, timestamp: Date.now() };
+      return data;
     },
     refetchInterval: 60000,
-    staleTime: 30000,
+    staleTime: 60000,
+    gcTime: 1000 * 60 * 15,
     retry: (failureCount, error) => {
       if (error instanceof Error && error.message.includes('429')) return false;
-      return failureCount < 2;
+      return failureCount < 3;
     },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
 
@@ -77,7 +70,7 @@ export function useCoinHistory(coinId: string | null) {
       if (!coinId) return [];
 
       const cached = coinHistoryCache.get(coinId);
-      if (cached && Date.now() - cached.timestamp < 600000) {
+      if (cached && Date.now() - cached.timestamp < 300000) {
         return cached.data;
       }
 
@@ -87,12 +80,16 @@ export function useCoinHistory(coinId: string | null) {
       );
 
       if (res.status === 429) {
-        const cached = coinHistoryCache.get(coinId);
-        if (cached) return cached.data;
+        const c = coinHistoryCache.get(coinId);
+        if (c) return c.data;
         throw new Error('Rate limit exceeded (429).');
       }
 
-      if (!res.ok) throw new Error(`CoinGecko API error: ${res.status}`);
+      if (!res.ok) {
+        const c = coinHistoryCache.get(coinId);
+        if (c) return c.data;
+        throw new Error(`CoinGecko API error: ${res.status}`);
+      }
 
       const data = await res.json();
       const points: HistoricalPricePoint[] = (data.prices || []).map(
@@ -104,9 +101,11 @@ export function useCoinHistory(coinId: string | null) {
     },
     enabled: !!coinId,
     staleTime: 300000,
+    gcTime: 1000 * 60 * 15,
     retry: (failureCount, error) => {
       if (error instanceof Error && error.message.includes('429')) return false;
-      return failureCount < 2;
+      return failureCount < 3;
     },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 }
