@@ -1,0 +1,72 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-27T22:57:54.469Z",
+  "summary": "The diff implements all five requirements with high fidelity. REQ-1 (top 150 table), REQ-2 (filter bar), REQ-3 (price projections), REQ-4 (React Query hooks), and REQ-5 (dark theme) are all addressed. However, several specific acceptance criteria have gaps: the filter bar uses a single combined sort dropdown rather than four separate dropdowns (one per metric), the hero banner image is absent, and the projection disclaimer note in the UI is not confirmed in the visible diff.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Four separate dropdown selectors — one each for Market Cap, Volume, Buy Ratio, and Fully Diluted Market Cap — must exist in the filter bar",
+      "reason": "Top150FilterBar.tsx implements a single unified 'Sort by' dropdown covering all fields rather than four individual metric-specific dropdowns as specified in the AC",
+      "evidence": [
+        "frontend/src/components/Top150FilterBar.tsx"
+      ]
+    },
+    {
+      "requirement": "Dark futuristic hero banner image (crypto-hero-banner.dim_1440x320.png) should be present",
+      "reason": "The build request explicitly requires this image but no reference to it appears in any added or modified file in the diff",
+      "evidence": []
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "The projection methodology must be documented with a short disclaimer note in the UI",
+      "reason": "The PriceProjectionsSection.tsx file is truncated in the diff; whether a disclaimer/methodology note is rendered cannot be fully confirmed, though it is a distinct AC item",
+      "evidence": [
+        "frontend/src/components/PriceProjectionsSection.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Light mode theme toggle in the header with a full .light CSS class definition",
+      "reason": "The build request specifies a dark-mode-first application and does not request a light mode or theme toggle button; Header.tsx and index.css implement a full light/dark toggle",
+      "evidence": [
+        "frontend/src/components/Header.tsx",
+        "frontend/src/index.css"
+      ]
+    },
+    {
+      "description": "Sorting by Price and 24h Change % added to the filter bar sort options",
+      "reason": "REQ-2 only specifies sort options for Market Cap, Volume, Buy Ratio, and Fully Diluted Market Cap; the implementation adds current_price and price_change_percentage_24h as additional sort fields",
+      "evidence": [
+        "frontend/src/components/Top150FilterBar.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.78,
+  "changed_files": [
+    "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AIProjections.tsx",
+    "frontend/src/components/CryptoPriceChart.tsx",
+    "frontend/src/components/CryptoPriceOverview.tsx",
+    "frontend/src/components/CryptoSelector.tsx",
+    "frontend/src/components/Footer.tsx",
+    "frontend/src/components/Header.tsx",
+    "frontend/src/components/ICPDashboard.tsx",
+    "frontend/src/components/ICPPriceChart.tsx",
+    "frontend/src/components/ICPPriceOverview.tsx",
+    "frontend/src/components/MarketMetrics.tsx",
+    "frontend/src/components/MultiCryptoDashboard.tsx",
+    "frontend/src/components/PriceProjectionsSection.tsx",
+    "frontend/src/components/SentimentAnalytics.tsx",
+    "frontend/src/components/Top150Dashboard.tsx",
+    "frontend/src/components/Top150FilterBar.tsx",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/utils/projections.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}

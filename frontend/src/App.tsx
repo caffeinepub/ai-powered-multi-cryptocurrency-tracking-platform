@@ -3,41 +3,36 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { MultiCryptoDashboard } from '@/components/MultiCryptoDashboard';
+import { Top150Dashboard } from '@/components/Top150Dashboard';
 
-// Configure QueryClient with optimized settings for real-time crypto data
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      staleTime: 5000, // Data considered fresh for 5 seconds
-      gcTime: 1000 * 60 * 10, // Cache for 10 minutes
+      staleTime: 30000,
+      gcTime: 1000 * 60 * 10,
       retry: (failureCount, error) => {
-        // Don't retry on 404s or rate limits
         if (error instanceof Error) {
-          if (error.message.includes('404') || error.message.includes('Rate limit')) {
+          if (error.message.includes('429') || error.message.includes('Rate limit')) {
             return false;
           }
         }
-        return failureCount < 3;
+        return failureCount < 2;
       },
-      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    },
-    mutations: {
-      retry: 1,
+      retryDelay: (attemptIndex) => Math.min(2000 * 2 ** attemptIndex, 30000),
     },
   },
 });
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <div className="min-h-screen flex flex-col bg-background text-foreground">
           <Header />
-          <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
-            <MultiCryptoDashboard />
+          <main className="flex-1">
+            <Top150Dashboard />
           </main>
           <Footer />
         </div>

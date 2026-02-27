@@ -1,0 +1,135 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-27T22:57:54.473Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 5,
+    "implemented": 5,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Replace the existing multi-crypto dashboard with a new full-page dashboard that displays the top 150 cryptocurrencies ranked by market cap. Fetch live data from the CoinGecko public API (markets endpoint, vs_currency=usd, per_page=150, page=1). Display each coin in a sortable, paginated table with columns: Rank, Name/Symbol, Price, 24h Change, Market Cap, 24h Volume, Buy Ratio (approximated as 24h volume / market cap × 100, shown as a percentage), and Fully Diluted Market Cap.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/Top150Dashboard.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Top150Dashboard.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Add a filter/control bar above the top-150 table with dropdown selectors that allow the user to filter or sort the list by each of the following metrics individually: Live Market Cap (high to low / low to high), 24h Volume (high to low / low to high), Buy Ratio (high to low / low to high), and Fully Diluted Market Cap (high to low / low to high). Include a search input to filter coins by name or symbol. Include a reset button to clear all active filters.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/Top150FilterBar.tsx",
+          "frontend/src/components/Top150Dashboard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/Top150FilterBar.tsx",
+          "frontend/src/components/Top150Dashboard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Add a dedicated 'Price Projections' section below the main table. This section contains a coin selector dropdown (searchable, showing all 150 coins) and, once a coin is selected, displays a 12-month rolling price projection panel. The projection must show: a monthly price target table (Month 1 through Month 12 from today), a projected price range (low / mid / high) per month, a confidence score per month, and a line chart visualising the projected price trajectory over the 12-month period. Projections are algorithmically derived on the frontend using the coin's current price, 30-day historical trend from CoinGecko, and simple momentum/regression logic — no external AI API call required.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/PriceProjectionsSection.tsx",
+          "frontend/src/utils/projections.ts",
+          "frontend/src/components/Top150Dashboard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/PriceProjectionsSection.tsx",
+          "frontend/src/utils/projections.ts",
+          "frontend/src/components/Top150Dashboard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Implement a CoinGecko data-fetching layer using React Query with in-memory caching and rate-limit-safe request batching. Use the existing useQueries.ts pattern. Add a new hook (e.g. useTopCoins) that fetches the top 150 coins market data and a hook (e.g. useCoinHistory) that fetches 30-day historical price data for a selected coin. Both hooks must handle loading, error, and empty states gracefully and fall back to cached data on API errors.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/Top150Dashboard.tsx",
+          "frontend/src/components/PriceProjectionsSection.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/Top150Dashboard.tsx",
+          "frontend/src/components/PriceProjectionsSection.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Apply a cohesive dark-mode-first visual theme to the entire application. Use a dark charcoal/near-black base with neon cyan and gold accent colors. Use a clean sans-serif typeface. The header should display 'Crypto Tracker AI' branding. Cards, tables, and dropdowns should use subtle glassmorphism or frosted-panel styling. Positive price changes must render in emerald green, negative in red. The layout must be fully responsive down to 375 px mobile width.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/Header.tsx",
+          "frontend/src/components/Top150Dashboard.tsx",
+          "frontend/src/components/Top150FilterBar.tsx",
+          "frontend/src/components/PriceProjectionsSection.tsx",
+          "frontend/public/assets/generated/crypto-hero-banner.dim_1440x320.png"
+        ],
+        "matchedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/Header.tsx",
+          "frontend/src/components/Top150Dashboard.tsx",
+          "frontend/src/components/Top150FilterBar.tsx",
+          "frontend/src/components/PriceProjectionsSection.tsx",
+          "frontend/public/assets/generated/crypto-hero-banner.dim_1440x320.png"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "build-request.json",
+    "build-template/Dockerfile",
+    "build-template/LICENSE",
+    "build-template/README.md",
+    "build-template/deploy.sh",
+    "build-template/icp.yaml",
+    "build-template/src/backend/canister.yaml",
+    "build-template/src/frontend/canister.yaml",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/public/assets/generated/crypto-hero-banner.dim_1440x320.png",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AIProjections.tsx",
+    "frontend/src/components/CryptoPriceChart.tsx",
+    "frontend/src/components/CryptoPriceOverview.tsx",
+    "frontend/src/components/CryptoSelector.tsx",
+    "frontend/src/components/Footer.tsx",
+    "frontend/src/components/Header.tsx",
+    "frontend/src/components/ICPDashboard.tsx",
+    "frontend/src/components/ICPPriceChart.tsx",
+    "frontend/src/components/ICPPriceOverview.tsx",
+    "frontend/src/components/MarketMetrics.tsx",
+    "frontend/src/components/MultiCryptoDashboard.tsx",
+    "frontend/src/components/PriceProjectionsSection.tsx",
+    "frontend/src/components/SentimentAnalytics.tsx",
+    "frontend/src/components/Top150Dashboard.tsx",
+    "frontend/src/components/Top150FilterBar.tsx",
+    "frontend/src/config.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/utils/projections.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

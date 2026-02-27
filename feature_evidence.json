@@ -1,0 +1,116 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-replace-the-existing-multi-crypto-dashboard-with-a-new-full-page-dashboard-that-displays-the-top-150-cryptocurrencies-ranked-by-market-cap-fetch-live-data-from-the-coingecko-public-api-markets-endpoint-vs-currency-usd-per-page-150-page-1-display-each-coin-in-a-sortable-paginated-table-with-columns-rank-name-symbol-price-24h-change-market-cap-24h-volume-buy-ratio-approximated-as-24h-volume-market-cap-100-shown-as-a-percentage-and-fully-diluted-market-cap",
+      "featureTitle": "Replace the existing multi-crypto dashboard with a new full-page dashboard that displays the top 150 cryptocurrencies ranked by market cap. Fetch live data from the CoinGecko public API (markets endpoint, vs_currency=usd, per_page=150, page=1). Display each coin in a sortable, paginated table with columns: Rank, Name/Symbol, Price, 24h Change, Market Cap, 24h Volume, Buy Ratio (approximated as 24h volume / market cap × 100, shown as a percentage), and Fully Diluted Market Cap.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/Top150Dashboard.tsx"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-filter-control-bar-above-the-top-150-table-with-dropdown-selectors-that-allow-the-user-to-filter-or-sort-the-list-by-each-of-the-following-metrics-individually-live-market-cap-high-to-low-low-to-high-24h-volume-high-to-low-low-to-high-buy-ratio-high-to-low-low-to-high-and-fully-diluted-market-cap-high-to-low-low-to-high-include-a-search-input-to-filter-coins-by-name-or-symbol-include-a-reset-button-to-clear-all-active-filters",
+      "featureTitle": "Add a filter/control bar above the top-150 table with dropdown selectors that allow the user to filter or sort the list by each of the following metrics individually: Live Market Cap (high to low / low to high), 24h Volume (high to low / low to high), Buy Ratio (high to low / low to high), and Fully Diluted Market Cap (high to low / low to high). Include a search input to filter coins by name or symbol. Include a reset button to clear all active filters.",
+      "files": [
+        "frontend/src/components/Top150Dashboard.tsx",
+        "frontend/src/components/Top150FilterBar.tsx"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-dedicated-price-projections-section-below-the-main-table-this-section-contains-a-coin-selector-dropdown-searchable-showing-all-150-coins-and-once-a-coin-is-selected-displays-a-12-month-rolling-price-projection-panel-the-projection-must-show-a-monthly-price-target-table-month-1-through-month-12-from-today-a-projected-price-range-low-mid-high-per-month-a-confidence-score-per-month-and-a-line-chart-visualising-the-projected-price-trajectory-over-the-12-month-period-projections-are-algorithmically-derived-on-the-frontend-using-the-coin-s-current-price-30-day-historical-trend-from-coingecko-and-simple-momentum-regression-logic-no-external-ai-api-call-required",
+      "featureTitle": "Add a dedicated 'Price Projections' section below the main table. This section contains a coin selector dropdown (searchable, showing all 150 coins) and, once a coin is selected, displays a 12-month rolling price projection panel. The projection must show: a monthly price target table (Month 1 through Month 12 from today), a projected price range (low / mid / high) per month, a confidence score per month, and a line chart visualising the projected price trajectory over the 12-month period. Projections are algorithmically derived on the frontend using the coin's current price, 30-day historical trend from CoinGecko, and simple momentum/regression logic — no external AI API call required.",
+      "files": [
+        "frontend/src/components/PriceProjectionsSection.tsx",
+        "frontend/src/components/Top150Dashboard.tsx",
+        "frontend/src/utils/projections.ts"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-a-coingecko-data-fetching-layer-using-react-query-with-in-memory-caching-and-rate-limit-safe-request-batching-use-the-existing-usequeries-ts-pattern-add-a-new-hook-e-g-usetopcoins-that-fetches-the-top-150-coins-market-data-and-a-hook-e-g-usecoinhistory-that-fetches-30-day-historical-price-data-for-a-selected-coin-both-hooks-must-handle-loading-error-and-empty-states-gracefully-and-fall-back-to-cached-data-on-api-errors",
+      "featureTitle": "Implement a CoinGecko data-fetching layer using React Query with in-memory caching and rate-limit-safe request batching. Use the existing useQueries.ts pattern. Add a new hook (e.g. useTopCoins) that fetches the top 150 coins market data and a hook (e.g. useCoinHistory) that fetches 30-day historical price data for a selected coin. Both hooks must handle loading, error, and empty states gracefully and fall back to cached data on API errors.",
+      "files": [
+        "frontend/src/components/PriceProjectionsSection.tsx",
+        "frontend/src/components/Top150Dashboard.tsx",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-apply-a-cohesive-dark-mode-first-visual-theme-to-the-entire-application-use-a-dark-charcoal-near-black-base-with-neon-cyan-and-gold-accent-colors-use-a-clean-sans-serif-typeface-the-header-should-display-crypto-tracker-ai-branding-cards-tables-and-dropdowns-should-use-subtle-glassmorphism-or-frosted-panel-styling-positive-price-changes-must-render-in-emerald-green-negative-in-red-the-layout-must-be-fully-responsive-down-to-375-px-mobile-width",
+      "featureTitle": "Apply a cohesive dark-mode-first visual theme to the entire application. Use a dark charcoal/near-black base with neon cyan and gold accent colors. Use a clean sans-serif typeface. The header should display 'Crypto Tracker AI' branding. Cards, tables, and dropdowns should use subtle glassmorphism or frosted-panel styling. Positive price changes must render in emerald green, negative in red. The layout must be fully responsive down to 375 px mobile width.",
+      "files": [
+        "frontend/src/components/Header.tsx",
+        "frontend/src/components/PriceProjectionsSection.tsx",
+        "frontend/src/components/Top150Dashboard.tsx",
+        "frontend/src/components/Top150FilterBar.tsx",
+        "frontend/src/index.css",
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "http-outcalls@3.0.0",
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

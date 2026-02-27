@@ -1,0 +1,159 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Crypto Tracker – Top 150 Coins with Live Filters & 12-Month Price Projections",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Replace existing multi-crypto dashboard with a new full-page top-150 cryptocurrency tracker displaying live CoinGecko data in a sortable, paginated table",
+      "acceptanceCriteria": [
+        "Table renders 150 rows of live CoinGecko data on load",
+        "Each row shows: rank, coin name, symbol, logo, current price, 24h % change (color-coded green/red), market cap, 24h volume, buy ratio %, and fully diluted market cap",
+        "Table is sortable by clicking any column header",
+        "Table supports pagination or virtual scrolling for performance",
+        "Data auto-refreshes every 60 seconds"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/Top150Dashboard.tsx",
+          "operation": "create",
+          "description": "Create a new full-page dashboard component that renders a sortable, paginated table of the top 150 cryptocurrencies. Fetch data using the useTopCoins hook (REQ-4). Display columns: Rank, Name/Symbol with logo, Price (USD), 24h Change % (color-coded green for positive, red for negative), Market Cap, 24h Volume, Buy Ratio (calculated as 24h volume / market cap × 100), and Fully Diluted Market Cap. Implement column header click handlers for sorting. Use pagination or virtual scrolling for performance. Set up a 60-second auto-refresh interval using React Query's refetchInterval."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Replace the existing MultiCryptoDashboard component with the new Top150Dashboard component as the main view. Remove references to the old multi-crypto selector and dashboard logic. Ensure the app layout (Header, Footer) remains intact and the Top150Dashboard is rendered as the primary content area."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a filter/control bar above the top-150 table with dropdown selectors for sorting by Market Cap, Volume, Buy Ratio, and Fully Diluted Market Cap, plus search input and reset button",
+      "acceptanceCriteria": [
+        "Four dropdown selectors exist: one each for Market Cap, Volume, Buy Ratio, and Fully Diluted Market Cap",
+        "Selecting a dropdown option re-sorts or filters the table immediately without page reload",
+        "Search input filters the visible rows by name or ticker symbol in real time",
+        "Reset button clears all dropdowns and search input and restores default market-cap ranking",
+        "Active filter state is visually indicated on the dropdown buttons"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/Top150FilterBar.tsx",
+          "operation": "create",
+          "description": "Create a filter/control bar component that renders four dropdown selectors (Market Cap, Volume, Buy Ratio, Fully Diluted Market Cap) with high-to-low and low-to-high sort options, a text search input for filtering by name or symbol, and a reset button. Manage filter state locally and expose it via props or callback to the parent Top150Dashboard. Use shadcn/ui Select components for dropdowns. Show visual indicators (e.g., accent color or icon) on active filter dropdowns. The reset button clears all filter state and restores default market-cap descending sort."
+        },
+        {
+          "path": "frontend/src/components/Top150Dashboard.tsx",
+          "operation": "modify",
+          "description": "Integrate the Top150FilterBar component above the table. Accept filter state from the filter bar and apply it to the fetched coin data before rendering the table. Implement real-time filtering for the search input (case-insensitive match on name or symbol) and sorting logic based on the selected dropdown criteria. Ensure the table re-renders immediately when filter state changes, without requiring a page reload or new API fetch."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add a 'Price Projections' section below the main table with a coin selector dropdown and a 12-month rolling price projection panel showing monthly targets, ranges, confidence scores, and a line chart",
+      "acceptanceCriteria": [
+        "A 'Price Projections' section is rendered below the main tracker table",
+        "A searchable dropdown lets the user pick any of the 150 tracked coins",
+        "After selecting a coin, a 12-row monthly projection table appears (Month 1 – Month 12)",
+        "Each row shows projected low, mid, and high price plus a confidence percentage",
+        "A Recharts line chart visualises the mid-price projection curve with shaded bands for low/high range",
+        "Projections update when the selected coin changes",
+        "The projection methodology is documented with a short disclaimer note in the UI"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/PriceProjectionsSection.tsx",
+          "operation": "create",
+          "description": "Create a dedicated 'Price Projections' section component that renders below the main Top150Dashboard table. Include a searchable dropdown (using shadcn/ui Select or Combobox) populated with all 150 tracked coins (name + symbol). When a coin is selected, fetch its 30-day historical data via the useCoinHistory hook (REQ-4) and compute a 12-month rolling projection using the generateProjections utility (REQ-3). Display a 12-row table showing Month 1 through Month 12 from today, with columns for projected low, mid, and high prices, and a confidence percentage per month. Render a Recharts line chart visualizing the mid-price trajectory with shaded areas (using Area component) for low/high ranges. Include a short disclaimer note explaining the projection methodology (e.g., 'Projections are derived from 30-day historical trends and simple momentum/regression logic. Not financial advice.')."
+        },
+        {
+          "path": "frontend/src/utils/projections.ts",
+          "operation": "create",
+          "description": "Create a utility module that exports a generateProjections function. This function accepts a coin's current price and an array of 30-day historical price data points, and returns a 12-element array of monthly projection objects. Each object contains: month number (1-12), projected low/mid/high prices, and a confidence percentage. Use simple momentum and linear regression logic to extrapolate future prices. Calculate confidence scores based on historical volatility (lower volatility = higher confidence). Include TypeScript interfaces for projection data structures."
+        },
+        {
+          "path": "frontend/src/components/Top150Dashboard.tsx",
+          "operation": "modify",
+          "description": "Render the PriceProjectionsSection component below the main table and filter bar. Pass the list of 150 coins as a prop so the projection section can populate its dropdown. Ensure the section is visually separated from the table (e.g., with margin or a divider)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Implement a CoinGecko data-fetching layer using React Query with hooks for top 150 coins and 30-day historical data, with caching and graceful error handling",
+      "acceptanceCriteria": [
+        "useTopCoins hook returns 150 coins with all required fields",
+        "useCoinHistory hook accepts a coinId and returns 30 data points",
+        "React Query cache is used — repeated renders do not fire duplicate requests within the cache window",
+        "Loading skeletons are shown while data is fetching",
+        "Error boundary or error message is shown if the API fails"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add two new React Query hooks: useTopCoins and useCoinHistory. useTopCoins fetches the top 150 cryptocurrencies from CoinGecko's /coins/markets endpoint with params: vs_currency=usd, per_page=150, page=1, order=market_cap_desc. Return an array of coin objects with fields: id, rank, name, symbol, image (logo URL), current_price, price_change_percentage_24h, market_cap, total_volume, and fully_diluted_valuation. useCoinHistory accepts a coinId string and fetches 30 days of historical price data from CoinGecko's /coins/{id}/market_chart endpoint with params: vs_currency=usd, days=30. Return an array of price data points (timestamp, price). Both hooks must use React Query's caching (staleTime, cacheTime), handle loading/error states gracefully, and fall back to cached data on API errors. Set refetchInterval to 60 seconds for useTopCoins to support auto-refresh."
+        },
+        {
+          "path": "frontend/src/components/Top150Dashboard.tsx",
+          "operation": "modify",
+          "description": "Integrate the useTopCoins hook to fetch and display the top 150 coins. Show loading skeletons (e.g., shadcn/ui Skeleton components) while data is fetching. Display an error message with a retry button if the API call fails. Ensure the component gracefully handles empty states and uses cached data when available."
+        },
+        {
+          "path": "frontend/src/components/PriceProjectionsSection.tsx",
+          "operation": "modify",
+          "description": "Integrate the useCoinHistory hook to fetch 30-day historical data for the selected coin. Show a loading skeleton while data is fetching. Display an error message if the fetch fails. Only render the projection table and chart after successful data fetch."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Apply a cohesive dark-mode-first visual theme with charcoal/near-black base, neon cyan and gold accents, glassmorphism styling, and full mobile responsiveness",
+      "acceptanceCriteria": [
+        "App renders in dark mode by default with charcoal backgrounds and neon cyan / gold accents",
+        "All table rows, cards, and dropdowns use consistent glassmorphism styling",
+        "Positive 24h change values are green, negative values are red",
+        "Layout is fully usable on a 375 px wide mobile screen",
+        "Header shows 'Crypto Tracker AI' title"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Update the global stylesheet to enforce a dark-mode-first theme. Set the root background to a dark charcoal/near-black color (e.g., hsl(0 0% 8%)). Define CSS custom properties for neon cyan (e.g., --accent-cyan: hsl(180 100% 50%)) and gold (e.g., --accent-gold: hsl(45 100% 50%)) accent colors. Add utility classes for positive price changes (text-emerald-400 or similar green) and negative changes (text-red-400). Define glassmorphism styling using backdrop-blur and semi-transparent backgrounds (e.g., .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }). Ensure all typography uses a clean sans-serif font (e.g., system-ui, -apple-system, sans-serif). Add responsive breakpoints and ensure layout elements are usable at 375px width."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Extend the Tailwind config to include custom color tokens for the dark-mode theme: charcoal/near-black backgrounds, neon cyan and gold accents. Add custom utility classes for glassmorphism (e.g., 'glass' or 'frosted-panel') using backdrop-blur and semi-transparent backgrounds. Configure responsive breakpoints to ensure the layout is fully usable down to 375px width. Set the default dark mode strategy to 'class' or 'media' to enforce dark mode by default."
+        },
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Update the Header component to display 'Crypto Tracker AI' as the branding title. Apply the dark-mode theme styling (charcoal background, neon cyan/gold accents) and ensure the header is sticky and responsive. Keep the dark/light theme toggle button if it exists, but ensure dark mode is the default."
+        },
+        {
+          "path": "frontend/src/components/Top150Dashboard.tsx",
+          "operation": "modify",
+          "description": "Apply glassmorphism styling to the table container and rows. Use the defined 'glass' or 'frosted-panel' utility classes. Ensure positive 24h change percentages render in emerald green and negative changes in red using conditional className logic. Apply consistent styling to all cards, dropdowns, and interactive elements. Ensure the table layout is responsive and usable at 375px width (e.g., horizontal scroll or stacked layout for smaller screens)."
+        },
+        {
+          "path": "frontend/src/components/Top150FilterBar.tsx",
+          "operation": "modify",
+          "description": "Apply glassmorphism styling to the filter bar and dropdown selectors. Use neon cyan or gold accents for active filter indicators. Ensure the filter bar is responsive and usable on 375px width screens (e.g., stack dropdowns vertically or use a collapsible layout)."
+        },
+        {
+          "path": "frontend/src/components/PriceProjectionsSection.tsx",
+          "operation": "modify",
+          "description": "Apply glassmorphism styling to the projection section container, table, and chart. Use emerald green for positive projected changes and red for negative. Ensure the section is responsive and usable at 375px width. Apply neon cyan and gold accents to the dropdown and chart highlights."
+        },
+        {
+          "path": "frontend/public/assets/generated/crypto-hero-banner.dim_1440x320.png",
+          "operation": "create",
+          "description": "Wire the generated hero banner image (crypto-hero-banner.dim_1440x320.png) into the UI. This image is located at frontend/public/assets/generated/crypto-hero-banner.dim_1440x320.png. Display it as a hero banner at the top of the Top150Dashboard or in the Header component. Use an <img> tag with the workspace file path as the src attribute. Ensure the image is responsive and scales appropriately on mobile devices (375px width). Apply the dark futuristic aesthetic (abstract cryptocurrency network nodes, glowing cyan lines, near-black background) to match the app's theme."
+        }
+      ]
+    }
+  ]
+}
